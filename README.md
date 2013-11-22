@@ -10,3 +10,9 @@ Please submit your issues [here](https://github.com/etalab/etalab-support/issues
 - browser and version
 - using proxy, firewall, extensions...
 - ...
+
+You can submit feature requests and enhancement proposals too but same rules as issues applies:
+- be as descriptive as possible
+- provides mockups, screenshots ...
+
+We will try to handle your requests as soon as possible.
