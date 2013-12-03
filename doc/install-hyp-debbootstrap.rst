@@ -103,6 +103,14 @@ On monte le /proc et /sys :
 
 On met en place la configuration réseau :
 
+- Ajouter le bloc suivant dans le fichier */etc/hosts* :
+
+::
+  
+  192.168.0.1	ns235513
+  192.168.0.2	ns235977
+  192.168.0.3	ns236004
+
 - /etc/network/interfaces :
 
 ::
@@ -177,7 +185,14 @@ On install un kernel :
 
 ::
 
-  apt-get install -t wheezy-backports linux-image-amd64
+  apt-get install linux-image-3.11-0.bpo.2-amd64
+
+Configuration de alerte mail :
+
+::
+  
+  echo "root: supervision@etalab2.fr" >> /etc/aliases
+  newaliases
 
 On install mdadm & grub :
 
@@ -367,6 +382,7 @@ Configuration des monitors
   ceph-authtool --create-keyring  /etc/ceph/ceph.client.admin.keyring --gen-key -n client.admin
   ceph-authtool --create-keyring /var/lib/ceph/mon/ceph-a/keyring --gen-key -n mon.
   cp -a /var/lib/ceph/mon/ceph-a/keyring /etc/ceph/ceph.mon.a.keyring
+  chmod 600 /etc/ceph/ceph.client.admin.keyring
   cat /etc/ceph/ceph.client.admin.keyring >> /var/lib/ceph/mon/ceph-a/keyring
   ceph-authtool /var/lib/ceph/mon/ceph-a/keyring -n client.admin --cap mds 'allow' --cap osd 'allow *' --cap mon 'allow *'
   ceph-mon -i a -f -c /etc/ceph/ceph.conf --mkfs
@@ -379,6 +395,7 @@ Configuration des monitors
   scp 192.168.0.1:/var/lib/ceph/mon/ceph-a/keyring /var/lib/ceph/mon/ceph-b/keyring
   scp 192.168.0.1:/etc/ceph/ceph.mon.a.keyring /etc/ceph/ceph.mon.b.keyring
   scp 192.168.0.1:/etc/ceph/ceph.client.admin.keyring /etc/ceph/ceph.client.admin.keyring
+  chmod 600 /etc/ceph/ceph.client.admin.keyring
   ceph-mon -i b -f -c /etc/ceph/ceph.conf --mkfs
 
 - Sur **ns236004** :
@@ -389,6 +406,7 @@ Configuration des monitors
   scp 192.168.0.1:/var/lib/ceph/mon/ceph-a/keyring /var/lib/ceph/mon/ceph-c/keyring
   scp 192.168.0.1:/etc/ceph/ceph.mon.a.keyring /etc/ceph/ceph.mon.c.keyring
   scp 192.168.0.1:/etc/ceph/ceph.client.admin.keyring /etc/ceph/ceph.client.admin.keyring
+  chmod 600 /etc/ceph/ceph.client.admin.keyring
   ceph-mon -i c -f -c /etc/ceph/ceph.conf --mkfs
 
 - Sur les trois serveurs : 
@@ -461,7 +479,6 @@ Installation de libvirt
   lvcreate -L 5G -n libvirt vg_$( hostname -s )
   mkfs.ext4 /dev/vg_$( hostname -s )/libvirt 
   tune2fs -i0 -c0 /dev/vg_$( hostname -s )/libvirt
-  vi /etc/fstab
   echo "/dev/mapper/vg_$( hostname -s )-libvirt /var/lib/libvirt ext4    defaults             0       0" >> /etc/fstab
   mount -a
   apt-get install libvirt-bin qemu-kvm netcat-openbsd qemu-utils
