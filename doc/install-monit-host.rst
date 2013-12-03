@@ -12,7 +12,7 @@ On supprime toute trace de l'ancien RAID :
   mdadm --zero-superblock /dev/sdb1
   mdadm --zero-superblock /dev/sdb2
 
-Histoire d'être sure :
+Histoire d'être sûr :
 
 ::
   
@@ -26,7 +26,7 @@ On créé un nouveau RAID 1 sur sda1 & sdb1 :
 
 ::
 
-  mdadm --create /dev/md0 --metadata=0.90 -l 1 -n 2 /dev/sda1 /dev/sdb1
+  mdadm --create /dev/md0 -l 1 -n 2 /dev/sda1 /dev/sdb1
 
 On met du LVM sur /dev/md0 :
 
@@ -185,7 +185,7 @@ On install mdadm & grub :
 
 Remarque : choisir d'installer grub sur sda et sdb.
 
-On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.10). Pour cela il faut modifier la varaible //GRUB_CMDLINE_LINUX_DEFAULT// dans le fichier ///etc/default/grub// et mettre la valeur //"rootdelay=8"//. Il faut ensuite lancer la commande :
+On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.11). Pour cela il faut modifier la varaible //GRUB_CMDLINE_LINUX_DEFAULT// dans le fichier ///etc/default/grub// et mettre la valeur //"rootdelay=8"//. Il faut ensuite lancer la commande :
 
 ::
 
@@ -451,8 +451,13 @@ Installation du plugin :
   
   git clone https://github.com/valerytschopp/ceph-nagios-plugins.git /usr/local/src/ceph-nagios-plugins
   ln -s /usr/local/src/ceph-nagios-plugins/src/check_ceph_health /usr/local/lib/nagios/plugins/check_ceph_health
+  
   git clone http://git.zionetrix.net/git/check_ceph_usage /usr/local/src/check_ceph_usage
   ln -s /usr/local/src/check_ceph_usage/check_ceph_usage /usr/local/lib/nagios/plugins/check_ceph_usage
+  
+  git clone http://git.zionetrix.net/git/check_ceph_status /usr/local/src/check_ceph_status
+  ln -s /usr/local/src/check_ceph_status/check_ceph_status /usr/local/lib/nagios/plugins/check_ceph_status
+
 
 Installation de la configuration des checks :
 
@@ -460,6 +465,7 @@ Installation de la configuration des checks :
     
   echo "command[check_ceph_health]=/usr/local/lib/nagios/plugins/check_ceph_health -d -i nagios -k /etc/ceph/ceph.client.nagios.keyring" > /etc/nagios/nrpe.d/ceph.cfg
   echo "command[check_ceph_usage]=/usr/local/lib/nagios/plugins/check_ceph_usage -i nagios -k /etc/ceph/ceph.client.nagios.keyring --warning-data 50 --critical-data 60 --warning-allocated 80 --critical-allocated 90" >> /etc/nagios/nrpe.d/ceph.cfg
+  echo "command[check_ceph_status]=/usr/local/lib/nagios/plugins/check_ceph_status -i nagios -k /etc/ceph/ceph.client.nagios.keyring" >>/etc/nagios/nrpe.d/ceph.cfg
   service nagios-nrpe-server reload
 
 Installation du plugin de supervision du repos Git

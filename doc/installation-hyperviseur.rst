@@ -1,7 +1,10 @@
-Installation de l'OS d'un hyperviseur à partir de la console rescue-pro d'OVH
-=============================================================================
+=============================
+Installation d'un hyperviseur
+=============================
 
-.. important:: Les infos de la méthode ci-dessous sont adaptées au serveur *ns235977*. Adapté les nom, adresses IP et autres paramètres au serveur que vous installez.
+Installation de l'OS d'un hyperviseur à partir de la console rescue-pro d'OVH
+
+.. important:: La documentation ci-dessous est adaptée au serveur *ns235977*. Modifiez les noms, adresses IP et autres paramètres au serveur que vous installez.
 
 On supprime toute trace de l'ancien RAID :
 
@@ -15,14 +18,14 @@ On supprime toute trace de l'ancien RAID :
   mdadm --zero-superblock /dev/sdb2
 
 On repartionne sda & sba :
-- 100Go en type fd (RAID Logiciel)
+- 80G en type fd (RAID Logiciel)
 - le reste en xfs
 
 On créé un nouveau RAID 1 sur sda1 & sdb1 :
 
 ::
 
-  mdadm --create /dev/md0 --metadata=0.90 -l 1 -n 2 /dev/sda1 /dev/sdb1
+  mdadm --create /dev/md0 -l 1 -n 2 /dev/sda1 /dev/sdb1
 
 On met du LVM sur /dev/md0 :
 
@@ -134,17 +137,13 @@ On met en place la configuration réseau :
   	bridge_stp off
   	bridge_fd 0
   
-  auto vlan2060
-  iface vlan2060 inet manual
-  	vlan-raw-device eth0
-  
   auto br1
   iface br1 inet static
   	address 192.168.0.2
   	netmask 255.255.255.0
   	network 192.168.0.0
   	broadcast 192.168.0.255
-  	bridge_ports vlan2060
+  	bridge_ports eth1
   	bridge_maxwait 0
   	bridge_stp off
   	bridge_fd 0
@@ -202,7 +201,7 @@ On install mdadm & grub :
 
 Remarque : choisir d'installer grub sur sda et sdb.
 
-On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.10). Pour cela il faut modifier la varaible //GRUB_CMDLINE_LINUX_DEFAULT// dans le fichier ///etc/default/grub// et mettre la valeur //"rootdelay=8"//. Il faut ensuite lancer la commande :
+On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.11). Pour cela il faut modifier la varaible //GRUB_CMDLINE_LINUX_DEFAULT// dans le fichier ///etc/default/grub// et mettre la valeur //"rootdelay=8"//. Il faut ensuite lancer la commande :
 
 ::
 
@@ -210,6 +209,7 @@ On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.10). P
 
 Configuration des hyperviseurs une fois l'installation de l'OS fait
 ===================================================================
+
 
 Ajout d'un utilisateur etalab
 -----------------------------
@@ -221,13 +221,13 @@ Ajout d'un utilisateur etalab
 
 **Remarque :** Pour la connexion SSH via une clé avec cette utilisateur, la clé doit être mise dans le fichier */etc/ssh/authorized_keys/etalab*.
 
-Une fois les clés SSH ajoutées dans */etc/ssh/authorized_keys/root* et */etc/ssh/authorized_keys/etalab*, éditer le fichier */etc/ssh/sshd_config* et ajouter la ligne::
 
-  PasswordAuthentication no
+Suppression de l'authentification par mot de passe dans SSH
+-----------------------------------------------------------
 
-Puis redémarrer sshd::
+Dans le fichier /etc/ssh/sshd_config, ajouter la ligne ::
 
-  service ssh restart
+  PasswordAuthentication no 
 
 
 Installation de fail2ban
@@ -355,10 +355,16 @@ Installation de Ceph
   apt-get install ceph
   mkdir /var/lib/ceph/osd/ceph-0 -p
   mkdir /var/lib/ceph/osd/ceph-1 -p
+  mkdir /var/lib/ceph/osd/ceph-2 -p
+  mkdir /var/lib/ceph/osd/ceph-3 -p
   mkfs.xfs -f -n size=64k /dev/sda2
   mkfs.xfs -f -n size=64k /dev/sdb2
+  mkfs.xfs -f -n size=64k /dev/sdc
+  mkfs.xfs -f -n size=64k /dev/sdd
   echo "/dev/sda2 /var/lib/ceph/osd/ceph-0 xfs rw,noexec,nodev,noatime,nodiratime,inode64 0 0" >> /etc/fstab
   echo "/dev/sdb2 /var/lib/ceph/osd/ceph-1 xfs rw,noexec,nodev,noatime,nodiratime,inode64 0 0" >> /etc/fstab
+  echo "/dev/sdc  /var/lib/ceph/osd/ceph-2 xfs rw,noexec,nodev,noatime,nodiratime,inode64 0 0" >> /etc/fstab
+  echo "/dev/sdd  /var/lib/ceph/osd/ceph-3 xfs rw,noexec,nodev,noatime,nodiratime,inode64 0 0" >> /etc/fstab
   mount -a
 
 Remarques :
@@ -435,24 +441,19 @@ Configuration des OSDs
   service ceph -a start osd.1  
   ceph osd crush set 1 2.0 root=default datacenter=rbx host=ns235513
 
-- Sur **ns235977** :
-
-::
-
-  mkdir /var/lib/ceph/journal/
   ceph osd create
   ceph-osd -i 2 --mkfs --mkkey
   ceph auth add osd.2 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-2/keyring
   service ceph -a start osd.2
-  ceph osd crush set 2 2.0 root=default datacenter=rbx host=ns235977
+  ceph osd crush set 2 2.0 root=default datacenter=rbx host=ns235513
   
   ceph osd create
   ceph-osd -i 3 --mkfs --mkkey
   ceph auth add osd.3 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-3/keyring
-  service ceph -a start osd.3
-  ceph osd crush set 3 2.0 root=default datacenter=rbx host=ns235977
+  service ceph -a start osd.3  
+  ceph osd crush set 3 2.0 root=default datacenter=rbx host=ns235513
 
-- Sur **ns236004** :
+- Sur **ns235977** :
 
 ::
 
@@ -461,13 +462,216 @@ Configuration des OSDs
   ceph-osd -i 4 --mkfs --mkkey
   ceph auth add osd.4 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-4/keyring
   service ceph -a start osd.4
-  ceph osd crush set 4 2.0 root=default datacenter=rbx host=ns236004
+  ceph osd crush set 4 2.0 root=default datacenter=rbx host=ns235977
   
   ceph osd create
   ceph-osd -i 5 --mkfs --mkkey
   ceph auth add osd.5 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-5/keyring
   service ceph -a start osd.5
-  ceph osd crush set 5 2.0 root=default datacenter=rbx host=ns236004
+  ceph osd crush set 5 2.0 root=default datacenter=rbx host=ns235977
+
+  ceph osd create
+  ceph-osd -i 6 --mkfs --mkkey
+  ceph auth add osd.6 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-6/keyring
+  service ceph -a start osd.6
+  ceph osd crush set 6 2.0 root=default datacenter=rbx host=ns235977
+
+  ceph osd create
+  ceph-osd -i 7 --mkfs --mkkey
+  ceph auth add osd.7 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-7/keyring
+  service ceph -a start osd.7
+  ceph osd crush set 7 2.0 root=default datacenter=rbx host=ns235977
+
+- Sur **ns236004** :
+
+::
+
+  mkdir /var/lib/ceph/journal/
+  ceph osd create
+  ceph-osd -i 8 --mkfs --mkkey
+  ceph auth add osd.8 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-8/keyring
+  service ceph -a start osd.8
+  ceph osd crush set 8 2.0 root=default datacenter=rbx host=ns236004
+  
+  ceph osd create
+  ceph-osd -i 9 --mkfs --mkkey
+  ceph auth add osd.9 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-9/keyring
+  service ceph -a start osd.9
+  ceph osd crush set 9 2.0 root=default datacenter=rbx host=ns236004
+
+  ceph osd create
+  ceph-osd -i 10 --mkfs --mkkey
+  ceph auth add osd.10 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-10/keyring
+  service ceph -a start osd.10
+  ceph osd crush set 10 2.0 root=default datacenter=rbx host=ns236004
+
+  ceph osd create
+  ceph-osd -i 11 --mkfs --mkkey
+  ceph auth add osd.11 osd 'allow *' mon 'allow rwx' -i /var/lib/ceph/osd/ceph-11/keyring
+  service ceph -a start osd.11
+  ceph osd crush set 11 2.0 root=default datacenter=rbx host=ns236004
+
+Configuration de la CRUSH map
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On met dans un fichier temporaire (exemple : */tmp/crush.txt*) la CRUSH Map :
+
+::
+
+  # begin crush map
+  
+  # devices
+  device 0 osd.0
+  device 1 osd.1
+  device 2 osd.2
+  device 3 osd.3
+  device 4 osd.4
+  device 5 osd.5
+  device 6 osd.6
+  device 7 osd.7
+  device 8 osd.8
+  device 9 osd.9
+  device 10 osd.10
+  device 11 osd.11
+  
+  # types
+  type 0 osd
+  type 1 host
+  type 2 datacenter
+  type 3 root
+  
+  # buckets
+  
+  host ns235513-ssd {
+          id -1
+          alg straw
+          hash 0
+          item osd.0 weight 2.000
+          item osd.1 weight 2.000
+  }
+  host ns235513-sata {
+          id -2
+          alg straw
+          hash 0
+          item osd.2 weight 2.000
+          item osd.3 weight 2.000
+  }
+  host ns235977-ssd {
+          id -3
+          alg straw
+          hash 0
+          item osd.4 weight 2.000
+          item osd.5 weight 2.000
+  }
+  host ns235977-sata {
+          id -4
+          alg straw
+          hash 0
+          item osd.6 weight 2.000
+          item osd.7 weight 2.000
+  }
+  host ns236004-ssd {
+          id -5
+          alg straw
+          hash 0
+          item osd.8 weight 2.000
+          item osd.9 weight 2.000
+  }
+  host ns236004-sata {
+          id -6
+          alg straw
+          hash 0
+          item osd.10 weight 2.000
+          item osd.11 weight 2.000
+  }
+  root sata {
+          id -7           # do not change unnecessarily
+          # weight 24.000
+          alg straw
+          hash 0  # rjenkins1
+          item ns235513-sata weight 8.000
+          item ns235977-sata weight 8.000
+          item ns236004-sata weight 8.000
+  }
+  root ssd {
+          id -8           # do not change unnecessarily
+          # weight 24.000
+          alg straw
+          hash 0  # rjenkins1
+          item ns235513-ssd weight 8.000
+          item ns235977-ssd weight 8.000
+          item ns236004-ssd weight 8.000
+  }
+  # rules
+  rule data {
+          ruleset 0
+          type replicated
+          min_size 1
+          max_size 10
+          step take sata
+          step chooseleaf firstn 0 type host
+          step emit
+  }
+  rule metadata {
+          ruleset 1
+          type replicated
+          min_size 1
+          max_size 10
+          step take sata
+          step chooseleaf firstn 0 type host
+          step emit
+  }
+  rule rbd {
+          ruleset 2
+          type replicated
+          min_size 1
+          max_size 10
+          step take sata
+          step chooseleaf firstn 0 type host
+          step emit
+  }
+  rule ssd {
+          ruleset 3
+          type replicated
+          min_size 1
+          max_size 10
+          step take ssd
+          step chooseleaf firstn 0 type host
+          step emit
+  }
+  # end crush map
+
+On compile ensuite cette CRUSH Map :
+
+::
+  
+  crushtool -c /tmp/crush.txt -o /tmp/crush
+
+On install ensuite cette nouvelle CRUSH Map :
+
+::
+  
+  ceph osd setcrushmap -i /tmp/crush
+
+On créé ensuite deux *pool ceph* pour *libvirt*, un pour le stockage *SSD* et un pour le stockage *SATA* :
+
+::
+
+  ceph osd pool create libvirt-ssd 200
+  ceph osd pool set libvirt-ssd crush_ruleset 3
+  ceph osd pool create libvirt-sata 200
+
+**Remarque :** Le nombre *200* correspond aux nombres de *Placement Group* calculé selon la méthode officielle expliqué ici : http://ceph.com/docs/master/rados/operations/placement-groups/
+
+On définie ensuite un niveau de réplication à 3 pour tout les pools :
+
+::
+
+  ceph osd pool set data size 3
+  ceph osd pool set metadata size 3
+  ceph osd pool set rbd size 3
+  ceph osd pool set libvirt-ssd size 3
+  ceph osd pool set libvirt-sata size 3
 
 Installation de libvirt
 -----------------------
@@ -490,7 +694,7 @@ Configuration de Libvirt pour utiliser Ceph
 
 ::
 
-  ceph auth get-or-create client.libvirt mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=libvirt-pool'
+  ceph auth get-or-create client.libvirt mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=libvirt-ssd, allow rwx pool=libvirt-sata'
 
 
 - Configuration d'un *secret* au niveau de libvirt pour stocker les informations d'authentification auprès de ceph (sur **ns235513**) :
@@ -519,7 +723,7 @@ Configuration de Libvirt pour utiliser Ceph
   [client.libvirt]
   	key = AQ**********************************0A==
   	caps mon = "allow r"
-  	caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=libvirt-pool"
+  	caps osd = "allow class-read object_prefix rbd_children, allow rwx pool=libvirt-ssd, allow rwx pool=libvirt-sata"
  
 - On peut maintenant définir à partir des deux informations récupérées :
 
@@ -528,41 +732,6 @@ Configuration de Libvirt pour utiliser Ceph
   virsh secret-set-value --secret 9b*******************************27e --base64 'AQ**********************************0A=='
   ssh 192.168.0.2 "virsh secret-set-value --secret 9b*******************************27e --base64 'AQ**********************************0A=='"
   ssh 192.168.0.3 "virsh secret-set-value --secret 9b*******************************27e --base64 'AQ**********************************0A=='"
-
-- Création d'un *pool ceph* pour *libvirt* (sur **ns235513**) :
-
-::
-
-  ceph osd pool create libvirt-pool 200
-
-**Remarque :** Le nombre *200* correspond aux nombres de *Placement Group* calculé selon la méthode officielle expliqué ici : http://ceph.com/docs/master/rados/operations/placement-groups/
-
-- On créé un fichier *XML* */tmp/rbd-pool.xml* qui nous permettra de définir le pool au niveau de libvirt (sur **ns235513**) :
-
-::
-
-  <pool type="rbd">
-        <name>rbd</name>
-        <source>
-          <name>libvirt-pool</name>
-            <host name='192.168.0.1' port='6789'/>
-            <host name='192.168.0.2' port='6789'/>
-            <host name='192.168.0.3' port='6789'/>
-            <auth username='libvirt' type='ceph'>
-              <secret uuid='9b*******************************27e'/>
-            </auth>
-        </source>
-  </pool>
-
-- On créé le pool dans libvirt à partir du fichier *XML* (sur **ns235513**) :
-
-::
-
-  virsh pool-define /tmp/rbd-pool.xml
-  scp /tmp/rbd-pool.xml 192.168.0.2:/tmp/
-  ssh 192.168.0.2 "virsh pool-define /tmp/rbd-pool.xml"
-  scp /tmp/rbd-pool.xml 192.168.0.3:/tmp/
-  ssh 192.168.0.3 "virsh pool-define /tmp/rbd-pool.xml"
 
 Mise en place des fichiers locaux
 ---------------------------------
@@ -589,29 +758,33 @@ Creation d'une VM
 
 ::
 
-  qemu-img create -f rbd rbd:libvirt-pool/[nom-vm] [taille]
+  qemu-img create -f rbd rbd:[pool]/[nom-vm] [taille]
 
 **Avec :**
 
+  - **[pool] :** Le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
   - **[nom-vm] :** Nom de la VM sans espace, uniquement des caractères ascii (exemple : *test*)
   - **[taille] :** Taille du disque (Exemple : *20G*)
 
 - Il faut ensuite créer une adresse MAC virtuelle dans l'interface OVH. Cette adresse MAC doit être associée à l'IP Failover qui sera associé à la VM. Pour cela, il faut d'abord associer l'IP Failover au serveur physique hébergeant la VM (Dans *Accueil > Serveurs dédiés	> Services > IP Fail-Over*), puis créer une MAC virtuelle pour cette adresse IP de type *ovh* (Dans *Accueil > Serveurs dédiés > Services > Mac Virtuelle pour VPS*).
 
-- Utiliser le commande *create-virtual-machine* pour créer la VM au niveau de Libvirt :
+- Utiliser les commandes *create-virtual-machine-failover* ou *create-virtual-machine-ripe* pour créer la VM au niveau de Libvirt ::
 
-::
+  create-virtual-machine-failover [nom-vm] [mac] [ssd]
 
-  create-virtual-machine [mon-vm] [mac]
+ou ::
+
+  create-virtual-machine-ripe [nom-vm] [ssd]
 
 **Avec :**
 
 - **[nom-vm] :** Nom de la VM (identique au nom du volume)
-- **[mac] :** l'adresse MAC virtuelle attaché à l'IP Failover destinée à la VM
+- **[mac] :** L'adresse MAC virtuelle attaché à l'IP Failover destinée à la VM
+- **[ssd] :** Ajouter le paramètre *ssd* si le disque de la VM est sur stockage *SSD*
 
 
 
-Lancer ensuite la VM et faire l'installation de celle-ci. L'outil *virt-manager* sera grandement utile pour cela. La VM est configurée pour booté sur son disque-dur puis sinon sur son lecteur de CD-ROM connecté à l'ISO Debian située sur chaque hyperviseur dans */var/lib/libvirt/images/debian-7.2.0-amd64-netinst.iso*. En conséquence, une fois la VM installée, elle rebootera sans modification sur son disque-dur.
+Lancer ensuite la VM et faire l'installation de celle-ci. L'outil *virt-manager* sera grandement utile pour cela. La VM est configurée pour booter sur son disque-dur puis sinon sur son lecteur de CD-ROM connecté à l'ISO Debian située sur chaque hyperviseur dans */var/lib/libvirt/images/debian-7.2.0-amd64-netinst.iso*. En conséquence, une fois la VM installée, elle rebootera sans modification sur son disque-dur.
 
 L'interface réseau est configurée pour utiliser le réseau publique, cependant il est pas possible de configurer cette interface depuis l'installeur au vue de la particularité de l'adressage OVH. Il faudra donc procéder à l'installation de base de la VM sans utiliser des dépôts réseaux.
 
@@ -636,7 +809,7 @@ Une fois l'installation terminé et toujours au travers la console de la VM, il 
 - **[IP FailOver] :** l'adresse IP FailOver (exemple : *87.98.165.65*)
 - **[GW Machine Physique] :** l'adresse IP de la passerelle de la machine physique (exemple pour *ns235513* c'est *178.33.236.254*)
 
-- Activer ensuite l'interface *eht0* :
+- Activer ensuite l'interface *eth0* :
 
 ::
 
@@ -648,7 +821,6 @@ Une fois l'installation terminé et toujours au travers la console de la VM, il 
 
   nameserver 213.186.33.99
 
-Votre VM est prêt a été utilisée. Pour vous connecter en SSH, pensez à installer le paquet Debian *openssh-server*. Par défaut, aucun dépôt Debian n'a été ajouté sur la VM. Une fois l'installation terminée et surtout l'ensemble des ressources de la VM définie, il faut déployer la configuration de votre VM sur l'ensemble des hyperviseurs. Pour cela, en partant du principe que la VM a été créée sur *ns235513* (autrement, adaptez les IP des serveurs) :
 
 ::
 
@@ -712,20 +884,37 @@ Lister les images disques du cluster ceph
 
 ::
   
-  rbd list --pool libvirt-pool
+  rbd list --pool [pool]
+
+**Avec :**
+
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
+
 
 Pour plus d'information sur une image disque en particulier, utiliser la commande :
 
 ::
   
-  rbd info libvirt-pool/[nom-vm]
+  rbd info [pool]/[nom-vm]
+
+**Avec :**
+
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
+
 
 Supprimer l'image disque d'une VM
 ---------------------------------
 
 ::
   
-  rbd rm libvirt-pool/[nom-vm]
+  rbd rm [pool]/[nom-vm]
+
+**Avec :**
+
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 Agrandir une image disque
 -------------------------
@@ -735,11 +924,12 @@ Agrandir une image disque
 
 ::
   
-  rbd resize --size=[taille en Mb] libvirt-pool/[nom-vm]
+  rbd resize --size=[taille en Mb] [pool]/[nom-vm]
 
 **Avec :**
 
 - **[taille en Mb] :** la nouvelle taille de l'image disque en Mb
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 - Une fois le redimessionement fait, relancer la VM :
@@ -763,7 +953,12 @@ Réduire une image disque
 
 ::
   
-  rbd resize --size=[taille en Mb] libvirt-pool/[nom-vm] --allow-shrink
+  rbd resize --size=[taille en Mb] [poolpool]/[nom-vm] --allow-shrink
+
+**Avec :**
+
+  - **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+  - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 - Relancer ensuite la VM
 - Si nécessaire, il faut maintenant faire en forte d'utiliser le volume complètement. Référez-vous à la fin de la procédure d'extention d'une image disque pour plus d'infos.
@@ -773,10 +968,11 @@ Créer un snapshot d'une image disque
 
 ::
   
-  rbd snap create libvirt-pool/[nom-vm]@[nom-snap]
+  rbd snap create [pool]/[nom-vm]@[nom-snap]
 
 **Avec :**
 
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 - **[nom-snap] :** le nom que vous voulez nommer votre snapshot. Ce nom doit être court, ne comporter que des caractères ASCII et sans espace ni caractère *compliqué*
 
@@ -786,10 +982,11 @@ Lister les snapshot d'une image disque
 
 ::
   
-  rbd snap list libvirt-pool/[nom-vm]
+  rbd snap list [pool]/[nom-vm]
 
 **Avec :**
 
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 Remettre un disque à l'état d'un snapshot précédent
@@ -798,10 +995,11 @@ Remettre un disque à l'état d'un snapshot précédent
 Cette opération consite a écraser toutes les modifications faites depuis un snapshot. Cette modification est **irréversible**. Il est cependant possible de faire un nouveau snapshot avant restauration afin de pouvoir revenir à l'état précédent si besoin est.
 
 ::
-  rbd snap rollback libvirt-pool/[nom-vm]@[nom-snap]
+  rbd snap rollback [pool]/[nom-vm]@[nom-snap]
 
 **Avec :**
 
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 - **[nom-snap] :** le nom du snapshot
 
@@ -812,10 +1010,11 @@ Supprimer un snapshot d'une image disque
 
 ::
   
-  rbd snap rm libvirt-pool/[nom-vm]@[nom-snap]
+  rbd snap rm [pool]/[nom-vm]@[nom-snap]
 
 **Avec :**
 
+- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 - **[nom-snap] :** le nom du snapshot
 

@@ -12,7 +12,11 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   install-hyp-debbootstrap
+   serveurs
+   installation-hyperviseur
+   installation-serveur-virtuel-ant
+   installation-serveur-virtuel-bat
+   install-monit-host
    supervision
 
 
