@@ -16,6 +16,7 @@ Contents:
    installation-hyperviseur
    installation-serveur-virtuel-ant
    installation-serveur-virtuel-bat
+   installation-serveur-virtuel-cat
    install-monit-host
    supervision
 
