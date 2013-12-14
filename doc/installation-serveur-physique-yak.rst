@@ -603,8 +603,14 @@ En tant que root ::
   a2ensite stats.data.gouv.fr.conf
   service apache2 restart
 
+
 Optimisation de Piwik
 ---------------------
+
+Dans Piwik "General Settings", mettre :
+
+* Allow Piwik archiving to trigger when reports are viewed from the browser: No
+* Reports for today (or any other Date Range including today) will be processed at most every 3600 seconds
 
 Créer le fichier ``/etc/cron.d/etalab`` ::
 
@@ -616,12 +622,38 @@ Puis en tant que root ::
 
   service cron restart
 
-Dans Piwik "General Settings", mettre :
-
-* Allow Piwik archiving to trigger when reports are viewed from the browser: No
-* Reports for today (or any other Date Range including today) will be processed at most every 3600 seconds
-
 Éditer le fichier ``/etc/php5/apache2/php.ini`` et mettre ::
 
   memory_limit = 512M
 
+
+Activation de la géolocalisation par ville dans Piwik
+-----------------------------------------------------
+
+En tant que root ::
+
+  aptitude install libapache2-mod-geoip
+  cd /home/etalab/vhosts/stats.data.gouv.fr/piwik/misc/
+  wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.xz
+  xz -d GeoLiteCity.dat.xz
+  mv GeoLiteCity.dat GeoIPCity.dat
+  chown www-data. GeoIPCity.dat
+
+Éditer le fichier ``/etc/apache2/mods-available/geoip.conf`` et modifier la ligne GeoIPDBFile ::
+
+  <IfModule mod_geoip.c>
+    GeoIPEnable On
+    #GeoIPDBFile /usr/share/GeoIP/GeoIP.dat
+    GeoIPDBFile /home/etalab/vhosts/stats.data.gouv.fr/piwik/misc/GeoIPCity.dat
+  </IfModule>
+
+En tant que root ::
+
+  service apache2 restart
+
+Dans Piwik "Geolocation" page :
+
+* Choisir "GeoIP (Apache)".
+* Setup automatic updates of GeoIP databases
+  * Location Database: http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+  * Update databases every months
