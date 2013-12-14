@@ -17,7 +17,7 @@ Contents:
    installation-serveur-virtuel-ant
    installation-serveur-virtuel-bat
    installation-serveur-virtuel-cat
-   install-monit-host
+   install-serveur-physique-yak
    supervision
 
 

@@ -1,7 +1,12 @@
+************************************
+Installation du serveur physique yak
+************************************
+
+
 Installation de l'OS de host de monitoring à partir de la console rescue-pro d'OVH
 ==================================================================================
 
-On supprime toute trace de l'ancien RAID :
+Supprimer toute trace de l'ancien RAID :
 
 ::
 
@@ -62,7 +67,7 @@ On lance un debbootstrap dans /mnt/ :
 
    debootstrap --arch=amd64 wheezy /mnt/ http://debian.mirrors.ovh.net/debian/
 
-On allimente le /dev du chroot :
+On alimente le /dev du chroot :
 
 ::
 
@@ -74,7 +79,7 @@ On entre dans le chroot :
 
   chroot /mnt/
 
-On défini le mot de passe root
+On définit le mot de passe root
 
 ::
 
@@ -105,15 +110,12 @@ On monte le /proc et /sys :
   mount /proc
   mount /sys
 
-On met en place la configuration réseau :
+- Dans ``/etc/hosts``, mettre les lignes ::
 
-- On renseigne le fichier */etc/hosts* :
+  127.0.1.1       yak.data.gouv.fr yak
+  37.187.72.214   ns3362306
 
-::
-  
-  echo -e "37.187.72.214\tns3362306" >> /etc/hosts
-
-- /etc/network/interfaces :
+- Modifier ``/etc/network/interfaces`` ::
 
 ::
 
@@ -213,8 +215,9 @@ Ajout d'un utilisateur etalab
 
 **Remarque :** Pour la connexion SSH via une clé avec cette utilisateur, la clé doit être mise dans le fichier */etc/ssh/authorized_keys/etalab*.
 
+
 Installation de fail2ban
-------------------------
+========================
 
 ::
   
@@ -244,8 +247,9 @@ Etant donné que Fail2ban utilise des règles Netfilter pour bloquer les IP bann
   ### END INIT INFO" > /etc/insserv/overrides/fail2ban
   insserv fail2ban
 
+
 Installation du pare-feu
-------------------------
+========================
 
 Mettre en place les fichiers suivant (commun à tout les hyperviseurs) :
 
@@ -261,7 +265,7 @@ Il faut ensuite activer le service au démarrage :
   insserv packetfilter
 
 Arrêt/démarrage du parefeu
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Démarrage :
 
@@ -283,10 +287,11 @@ Status :
 
 
 Installation de Munin
----------------------
+=====================
 
-Installation du serveur centrale
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Installation du serveur central
+-------------------------------
 
 Installation du paquet debian
 
@@ -316,8 +321,9 @@ On ajoute les hosts a monitorer en ajoutant dans le fichier */etc/munin/munin.co
 
 FIXME : configuration Apache, ...
 
+
 Installation du client
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 Installation du paquet debian
 
@@ -325,14 +331,15 @@ Installation du paquet debian
   
   apt-get install munin-node
 
-On autorise les connexions du serveur centrale en ajoutant dans le fichier */etc/munin/munin-node.conf* :
+On autorise les connexions du serveur central en ajoutant dans le fichier */etc/munin/munin-node.conf* :
 
 ::
   
   allow ^37\.187\.72\.214$
 
+
 Mise en place des plugins ceph pour Munin
-"""""""""""""""""""""""""""""""""""""""""
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On prépare tout d'abord un utilisateur ceph pour munin (sur **ns235513**) :
 
@@ -378,16 +385,18 @@ On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins :
   
   service munin-node restart
 
-Au prochain lancement du cron sur le serveur centrale, les nouveaux plugin seront détectés et graphés.
+Au prochain lancement du cron sur le serveur central, les nouveaux plugins seront détectés et graphés.
+
 
 Installation de Nagios
-----------------------
+======================
 
-Installation du serveur centrale
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Installation du serveur central
+-------------------------------
 
 ::
-  
+
   apt-get install icinga nagios-nrpe-plugin
   chmod g+rx /var/lib/icinga/rw
   adduser www-data nagios
@@ -396,21 +405,23 @@ Installation du serveur centrale
 
 **Remarque :** Autoriser l'activation des *external commands* durant l'installation, accepter la configuration automatique d'apache et entrer le mot de passe *admin*.
 
+
 Préparation des noeuds ceph pour la supervision
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------------
 
 * Sur **ns235513** :
 
 ::
-  
+
   ceph auth get-or-create client.nagios mon 'allow r' > /etc/ceph/ceph.client.nagios.keyring
   scp /etc/ceph/ceph.client.nagios.keyring 192.168.0.2:/etc/ceph/
   ssh root@192.168.0.2 'chown nagios: /etc/ceph/ceph.client.nagios.keyring'
   scp /etc/ceph/ceph.client.nagios.keyring 192.168.0.3:/etc/ceph/
   ssh root@192.168.0.3 'chown nagios: /etc/ceph/ceph.client.nagios.keyring'
-  
+
+
 Installation du client NRPE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------
 
 ::
   
@@ -440,8 +451,9 @@ Installation de la configuration des checks :
   
   service nagios-nrpe-server restart
 
+
 Installation du plugin de supervision Ceph
-""""""""""""""""""""""""""""""""""""""""""
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **A faire sur les trois noeuds Ceph**
 
@@ -468,8 +480,9 @@ Installation de la configuration des checks :
   echo "command[check_ceph_status]=/usr/local/lib/nagios/plugins/check_ceph_status -i nagios -k /etc/ceph/ceph.client.nagios.keyring" >>/etc/nagios/nrpe.d/ceph.cfg
   service nagios-nrpe-server reload
 
+
 Installation du plugin de supervision du repos Git
-""""""""""""""""""""""""""""""""""""""""""""""""""
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **A faire sur les trois noeuds Ceph**
 
@@ -491,7 +504,7 @@ Installation de la configuration des checks :
 
 
 Installation de git
--------------------
+===================
 
 On ajoute un utilisateur *git* :
 
@@ -502,3 +515,20 @@ On ajoute un utilisateur *git* :
 On met en place les clés SSH autorisées à se connecter au serveur via l'utilisateur *git* en ajoutant dans le fichier */etc/ssh/authorized_keys/git* les clés des utilisateurs *root* des hyperviseurs
 
 Il faut ensuite mettre les données des dépôts git dans */srv/git*. Toutes les dossiers et fichiers se trouvant dans ce dossier doivent appartenir à l'utilisateur *git*.
+
+
+Installation de Piwik
+=====================
+
+::
+
+  aptitude install libapache2-mod-php5
+  aptitude install unzip
+
+En tant qu'etalab ::
+
+  wget http://builds.piwik.org/latest.zip
+  unzip latest.zip
+  rm latest.zip
+  rm How\ to\ install\ Piwik.html
+

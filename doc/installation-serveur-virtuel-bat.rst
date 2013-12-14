@@ -338,12 +338,16 @@ Créer le fichier ``/etc/fedmsg-config.py`` ::
               ],
           },
 
+      'environment': 'prod',
+
       # This is the address of an active->passive relay. It is used for the
       # fedmsg producers that can't maintain a single passive-bind endpoint of
       # it's own.
       'relay_inbound': [
           'tcp://127.0.0.1:2003',
           ],
+
+      'topic_prefix': 'fr.gouv.data',
 
       ## For the fedmsg-hub and fedmsg-relay. ##
 
@@ -359,9 +363,7 @@ Créer le fichier ``/etc/fedmsg-config.py`` ::
 
       # Set this number to near, but not quite the fs.file-limit.  Try 160000.
       'fedmsg.consumers.gateway.high_water_mark': 10000,
-        }
-
-
+      }
 
 
 En tant que root, éditer le fichier ``/etc/default/jetty`` pour y mettre les lignes ::

@@ -258,3 +258,194 @@ Et en fin de fichier ajouter ::
 /etc/init.d postfix restart
         '''.strip()}</pre>
 
+
+Installation de wiki.data.gouv.fr
+=================================
+
+En tant que root ::
+
+  aptitude install git
+  aptitude install libapache2-mod-php5
+  aptitude install mysql-server
+  aptitude install php-apc
+  aptitude install php5-cli
+  aptitude install php5-gd
+  aptitude install php5-intl
+  aptitude install php5-mysql
+
+En tant qu'etalab ::
+
+  cd
+  mkdir repositories
+  cd repositories/
+  git init --bare wiki.data.gouv.fr.git
+  cd
+  mkdir vhosts
+  cd vhosts/
+  git clone ../repositories/wiki.data.gouv.fr.git
+  cd wiki.data.gouv.fr/
+  wget http://download.wikimedia.org/mediawiki/1.22/mediawiki-1.22.0.tar.gz
+  tar xzf mediawiki-1.22.0.tar.gz
+  mv mediawiki-1.22.0 mediawiki
+
+En tant que root ::
+
+  cd /home/etalab/vhosts/wiki.data.gouv.fr/mediawiki/
+  chown www-data. images/
+
+  cd /etc/apache2/sites-available/
+  ln -s /home/etalab/vhosts/wiki.data.gouv.fr/config/apache2.conf wiki.data.gouv.fr.conf
+  cd ../sites-enabled/
+  rm 000-default
+  a2ensite wiki.data.gouv.fr.conf
+  service apache2 restart
+
+Depuis un navigateur, aller sur http://wiki.data.gouv.fr/
+
+* Your language: en - English
+* Wiki language: fr -français
+* Database type: MySQL
+* Database host: localhost
+* Database name: my_wiki
+* Database table prefix:
+* Database username: root
+* Database password: XXXX
+* Database account for web access: Décocher "Use the same account as for installation"
+* Storage engine: InnoDB
+* Database character set: Binary
+* Name of wiki: WikiEtalab
+* Project namespace: Same as the wiki name: $1
+* Administrator account
+  * Your name: Emmanuel Raviart
+  * Password: XXXX
+  * Password again: XXXX
+  * Email address: emmanuel@raviart.com
+* Ask me more questions.
+* User rights profile: Open wiki
+* Copyright and license: No license footer
+* Enable outbound email
+* Return email address: webmaster+wiki@data.gouv.fr
+* Disable user talk page notification
+* Disable watchlist notification
+* Enable email authentication
+* Extensions: none
+* Enable file uploads
+* Logo URL: $wgStylePath/common/images/wiki.png
+* Disable Instant Commons
+* Settings for object caching: PHP object caching (APC, XCache or WinCache)
+
+Recopier le fichier ``LocalSettings.php`` ainsi généré dans le répertoire ``wiki.data.gouv.fr/config`` du PC local, l'adapter, le commiter; puis le pusher.
+
+Ensuite en tant qu'etalab ::
+
+  cd ~/vhosts/wiki.data.gouv.fr/
+  git pull
+  cd mediawiki/
+  ln -s ../config/LocalSettings.php
+  cd skins
+  git clone https://github.com/etalab/mediawiki-etalab-skin etalab
+
+
+Installation de fedmsg
+======================
+
+En tant que root ::
+
+  aptitude install python-pip
+
+Regarder les paquets nécessaires pour fedmsg ::
+
+  pip install --no-install fedmsg
+
+En installer le plus possible en utilisant les paquets Debian ::
+
+  aptitude install python-daemon
+  aptitude install python-decorator
+  aptitude install python-dev
+  aptitude install python-pygments
+  aptitude install python-requests
+  aptitude install python-twisted
+  aptitude install python-tz
+
+Installer fedmsg ::
+
+  pip install fedmsg
+
+Modifier le fichier ``/etc/fedmsg.d/base.py`` ::
+
+  environment = 'prod',
+  topic_prefix = 'fr.gouv.data',
+
+Dans ``/etc/fedmsg.d/endpoints.py``, commenter tous les endpoints.
+
+Dans ``/etc/fedmsg.d/ssl.py``, supprimer la signature des messages ::
+
+  validate_signatures=False,
+
+Tester que fedmsg fonctionne correctement en lançant dans 3 terminaux différents ::
+
+  fedmsg-relay
+
+  fedmsg-tail --really-pretty
+
+  echo "Hello, world" | fedmsg-logger
+
+
+Installation de fedmsg-emit.php
+===============================
+
+Installer les bindings PHP pour zmq ::
+
+  aptitude install make
+  aptitude install php5-dev
+  aptitude install pkg-config
+  aptitude install libzmq-dev
+
+En tant qu'etalab ::
+
+  cd ~
+  git clone git://github.com/mkoppanen/php-zmq.git
+  cd php-zmq
+  phpize
+  ./configure
+  make
+
+En tant que root ::
+
+  make install
+    Installing shared extensions:     /usr/lib/php5/20100525/
+
+Créer le fichier /etc/php5/apache2/conf.d/30-zmq.ini ::
+
+  ; configuration for php 0MQ module
+  ; priority=30
+  extension=zmq.so
+
+Télécharger et installer `fedmsg-init.php <https://github.com/fedora-infra/fedmsg/blob/develop/extras/mediawiki/fedmsg-emit.php>`_ ::
+
+  cd ~/vhosts/wiki.data.gouv.fr/mediawiki/extensions
+  wget https://github.com/fedora-infra/fedmsg/raw/develop/extras/mediawiki/fedmsg-emit.php
+
+Dans le fichier téléchargé, remplacer ::
+
+  $prefix = "org.fedoraproject." . $config['environment'] . ".wiki.";
+
+par ::
+
+  $prefix = "fr.gouv.data." . $config['environment'] . ".wiki.";
+
+
+Dans ~/vhosts/wiki.data.gouv.fr/config/LocalSettings.php, vérifier la présence des lignes ::
+
+  # fedmsg
+  require_once("$IP/extensions/fedmsg-emit.php");
+
+
+Tester que l'extension fedmsg pour MediaWiki fonctionne correctement en lançant dans 2 terminaux différents ::
+
+  fedmsg-relay
+
+  fedmsg-tail --really-pretty
+
+Et en modifiant une page du Wiki, un message de modification devrait apparaître dans la fenêtre du ``fedmsg-tail``.
+
