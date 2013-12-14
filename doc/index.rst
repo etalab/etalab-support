@@ -13,11 +13,11 @@ Contents:
    :maxdepth: 2
 
    serveurs
+   installation-serveur-physique-yak
    installation-hyperviseur
    installation-serveur-virtuel-ant
    installation-serveur-virtuel-bat
    installation-serveur-virtuel-cat
-   install-serveur-physique-yak
    supervision
 
 

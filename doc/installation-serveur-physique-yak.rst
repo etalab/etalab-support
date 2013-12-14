@@ -145,8 +145,8 @@ On monte le /proc et /sys :
 
 ::
 
-  hostname ns3362306.ovh.net
-  echo ns3362306.ovh.net > /etc/hostname
+  hostname yak
+  echo yak > /etc/hostname
 
 On ajoute les dépôts Debian suivant en plus de l'actuel :
 
@@ -214,6 +214,52 @@ Ajout d'un utilisateur etalab
   adduser etalab
 
 **Remarque :** Pour la connexion SSH via une clé avec cette utilisateur, la clé doit être mise dans le fichier */etc/ssh/authorized_keys/etalab*.
+
+
+Installation de postfix
+=======================
+
+Installer et configurer Postfix ::
+
+  aptitude purge exim4 exim4-base exim4-config exim4-daemon-light postfix+
+    General type of mail configuration:
+      Internet Site
+    System mail name:
+      yak.data.gouv.fr
+    Root and postmaster mail recipient:
+      etalab
+    Other destinations to accept mail for (blank for none):
+      yak.data.gouv.fr, ns3362306.ovh.net, localhost.ovh.net, localhost
+    Force synchronous updates on mail queue?
+      No
+    Local networks:
+      127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+    Mailbox size limit (bytes):
+      0
+    Local address extension character:
+      +
+    Internet protocols to use:
+      ipv4
+
+Dans ``/etc/posfix/main.cf``, modifier la ligne ::
+
+  myhostname = ns3362306.ovh.net
+
+
+en ::
+
+  myhostname = yak.data.gouv.fr
+
+Éditer le fichier ``/etc/aliases`` pour y ajouter ::
+
+  axel: axel@haustant.fr
+  emmanuel: emmanuel@raviart.com
+  etalab: axel,emmanuel
+
+Indexer la base et mettre à jour Postfix ::
+
+  newaliases
+  service postfix reload
 
 
 Installation de fail2ban
@@ -523,12 +569,59 @@ Installation de Piwik
 ::
 
   aptitude install libapache2-mod-php5
+  aptitude install mysql-server
+  aptitude install php5-cli
+  aptitude install php5-gd
+  aptitude install php5-mysql
   aptitude install unzip
 
 En tant qu'etalab ::
 
+  cd
+  mkdir repositories
+  cd repositories/
+  git init --bare stats.data.gouv.fr.git
+  cd
+  mkdir vhosts
+  cd vhosts/
+  git clone ../repositories/stats.data.gouv.fr.git
+  cd stats.data.gouv.fr/
   wget http://builds.piwik.org/latest.zip
   unzip latest.zip
   rm latest.zip
   rm How\ to\ install\ Piwik.html
+
+En tant que root ::
+
+  chown -R www-data:www-data /home/etalab/vhosts/stats.data.gouv.fr/piwik
+  chmod -R 0755 /home/etalab/vhosts/stats.data.gouv.fr/piwik/tmp
+
+  cd /etc/apache2/sites-available/
+  ln -s /home/etalab/vhosts/stats.data.gouv.fr/config/apache2.conf stats.data.gouv.fr.conf
+  cd ../sites-enabled/
+  rm 000-default
+  a2ensite stats.data.gouv.fr.conf
+  service apache2 restart
+
+Optimisation de Piwik
+---------------------
+
+Créer le fichier ``/etc/cron.d/etalab`` ::
+
+  MAILTO="supervision@data.gouv.fr"
+  # m h dom mon dow user command
+  42 * * * * www-data /usr/bin/php5 /home/etalab/vhosts/stats.data.gouv.fr/piwik/misc/cron/archive.php -- url=http://stats.data.gouv.fr/ > /tmp/piwik-archive.log
+
+Puis en tant que root ::
+
+  service cron restart
+
+Dans Piwik "General Settings", mettre :
+
+* Allow Piwik archiving to trigger when reports are viewed from the browser: No
+* Reports for today (or any other Date Range including today) will be processed at most every 3600 seconds
+
+Éditer le fichier ``/etc/php5/apache2/php.ini`` et mettre ::
+
+  memory_limit = 512M
 

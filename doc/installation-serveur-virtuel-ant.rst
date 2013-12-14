@@ -204,6 +204,7 @@ en ::
   emmanuel: emmanuel@raviart.com
   etalab: axel,emmanuel
   romain: romain.tales@pm.gouv.fr
+  supervision: axel,emmanuel
 
 Indexer la base et mettre à jour Postfix ::
 
