@@ -7,7 +7,7 @@ Dans la console web OVH, associer l'adresse IP failover 87.98.177.42 à ant et l
 Aller sur le serveur physique turtle.data.gouv.fr, en tant que root ::
 
   qemu-img create -f rbd rbd:libvirt-sata/ant 20G
-  create-virtual-machine ant 02:00:00:99:59:b6
+  create-virtual-machine-failover ant 02:00:00:99:59:b6
     Check name : OK
     Check RBD image : rbd image 'ant':
 	    size 20480 MB in 5120 objects
@@ -99,7 +99,7 @@ Remplacer le fichier ``/etc/apt/sources.list`` par ::
   # deb-src http://debian.mirrors.ovh.net/debian wheezy main
 
   deb http://security.debian.org/ wheezy/updates main
-  deb-src http://security.debian.org/ wheezy/updates main
+  # deb-src http://security.debian.org/ wheezy/updates main
 
   # wheezy-updates, previously known as 'volatile'
   deb http://debian.mirrors.ovh.net/debian wheezy-updates main

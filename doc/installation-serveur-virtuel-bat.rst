@@ -7,7 +7,7 @@ Dans la console web OVH, associer l'adresse IP failover 87.98.183.53 à bat et l
 Aller sur le serveur physique viper.data.gouv.fr, en tant que root ::
 
   qemu-img create -f rbd rbd:libvirt-ssd/bat 50G
-  create-virtual-machine bat 02:00:00:59:96:9e ssd
+  create-virtual-machine-failover bat 02:00:00:59:96:9e ssd
     Check name : OK
     Check RBD image : rbd image 'bat':
 	    size 51200 MB in 12800 objects
@@ -99,7 +99,7 @@ Remplacer le fichier ``/etc/apt/sources.list`` par ::
   # deb-src http://debian.mirrors.ovh.net/debian wheezy main
 
   deb http://security.debian.org/ wheezy/updates main
-  deb-src http://security.debian.org/ wheezy/updates main
+  # deb-src http://security.debian.org/ wheezy/updates main
 
   # wheezy-updates, previously known as 'volatile'
   deb http://debian.mirrors.ovh.net/debian wheezy-updates main
