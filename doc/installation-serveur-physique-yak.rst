@@ -139,7 +139,6 @@ On monte le /proc et /sys :
 ::
 
   nameserver 213.186.33.99
-  search ovh.net
 
 - Définition du *hostname* :
 
