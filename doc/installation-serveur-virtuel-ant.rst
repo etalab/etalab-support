@@ -426,6 +426,12 @@ En tant que root ::
   update-rc.d circus-fedmsg defaults
   service circus-fedmsg restart
 
+Tester que fedmsg fonctionne correctement en lançant dans 2 terminaux différents ::
+
+  fedmsg-tail --really-pretty
+
+  echo "Hello, world" | fedmsg-logger
+
 
 Installation de fedmsg-emit.php
 -------------------------------

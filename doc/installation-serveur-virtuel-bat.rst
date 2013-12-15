@@ -234,6 +234,91 @@ En tant que root ::
   npm install -g bower less uglify-js
 
 
+Installation de fedmsg
+======================
+
+En tant que root ::
+
+  aptitude install python-pip
+
+Regarder les paquets nécessaires pour fedmsg ::
+
+  pip install --no-install fedmsg
+
+En installer le plus possible en utilisant les paquets Debian ::
+
+  aptitude install python-daemon
+  aptitude install python-decorator
+  aptitude install python-dev
+  aptitude install python-pygments
+  aptitude install python-requests
+  aptitude install python-twisted
+  aptitude install python-tz
+
+Installer fedmsg ::
+
+  pip install fedmsg
+
+Modifier le fichier ``/etc/fedmsg.d/base.py`` ::
+
+  environment = 'prod',
+  topic_prefix = 'fr.gouv.data',
+
+Dans ``/etc/fedmsg.d/endpoints.py``, commenter tous les endpoints.
+
+Dans ``/etc/fedmsg.d/ssl.py``, supprimer la signature des messages ::
+
+  validate_signatures=False,
+
+Tester que fedmsg fonctionne correctement en lançant dans 3 terminaux différents ::
+
+  fedmsg-relay
+
+  fedmsg-tail --really-pretty
+
+  echo "Hello, world" | fedmsg-logger
+
+
+Installation de circus-fedmsg
+-----------------------------
+
+Regarder les paquets nécessaires pour circus ::
+
+  pip install --no-install circus
+
+Installer circus ::
+
+  pip install circus
+
+En tant qu'etalab ::
+
+  cd ~/repositories/
+  git init --bare circus-fedmsg.bat.data.gouv.fr.git
+  cd ..
+  git clone repositories/circus-fedmsg.bat.data.gouv.fr.git/
+  cd circus-fedmsg.bat.data.gouv.fr
+  mkdir ipc
+
+En tant que root ::
+
+  cd /var/log/
+  mkdir circus-fedmsg
+
+  cd /etc/logrotate.d/
+  ln -s /home/etalab/circus-fedmsg.bat.data.gouv.fr/circus-fedmsg.logrotate circus-fedmsg
+
+  cd /etc/init.d/
+  ln -s /home/etalab/circus-fedmsg.bat.data.gouv.fr/circus-fedmsg.init circus-fedmsg
+  update-rc.d circus-fedmsg defaults
+  service circus-fedmsg restart
+
+Tester que fedmsg fonctionne correctement en lançant dans 2 terminaux différents ::
+
+  fedmsg-tail --really-pretty
+
+  echo "Hello, world" | fedmsg-logger
+
+
 Installation de CKAN
 ====================
 
@@ -244,8 +329,8 @@ Installation de CKAN
   aptitude install ca-certificates
   aptitude install gcc
   aptitude install g++
-  aptitude install python-dev
-  aptitude install python-pip
+  # aptitude install python-dev
+  # aptitude install python-pip
   aptitude install python-virtualenv
   aptitude install postgresql-9.1
   aptitude install postgresql-server-dev-9.1
@@ -322,49 +407,6 @@ En tant qu'etalab (toujours dans le virtualenv "default") ::
   bower install
   ./setup.py build_assets
   cd ..
-
-  pip install fedmsg
-
-Créer le fichier ``/etc/fedmsg-config.py`` ::
-  # -*- coding: utf-8 -*-
-
-
-  config = {
-      'endpoints': {
-          # This is the output side of the relay to which all other
-          # services can listen.
-          'relay_outbound': [
-              'tcp://127.0.0.1:4001',
-              ],
-          },
-
-      'environment': 'prod',
-
-      # This is the address of an active->passive relay. It is used for the
-      # fedmsg producers that can't maintain a single passive-bind endpoint of
-      # it's own.
-      'relay_inbound': [
-          'tcp://127.0.0.1:2003',
-          ],
-
-      'topic_prefix': 'fr.gouv.data',
-
-      ## For the fedmsg-hub and fedmsg-relay. ##
-
-      # We almost always want the fedmsg-hub to be sending messages with zmq as
-      # opposed to amqp or stomp.
-      'zmq_enabled': True,
-
-      ## For the fedmsg-gateway ##
-
-      # This is the port for a special, outbound ZMQ pub socket on which we'll
-      # rebroadcast everything on the fedmsg bus.
-      'fedmsg.consumers.gateway.port': 9940,
-
-      # Set this number to near, but not quite the fs.file-limit.  Try 160000.
-      'fedmsg.consumers.gateway.high_water_mark': 10000,
-      }
-
 
 En tant que root, éditer le fichier ``/etc/default/jetty`` pour y mettre les lignes ::
 
