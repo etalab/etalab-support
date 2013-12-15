@@ -214,6 +214,7 @@ Indexer la base et mettre à jour Postfix ::
 Installer SpamAssassin ::
 
   aptitude install spamassassin
+  aptitude install spamc
 
 Dans /etc/default/spamassassin mettre ::
   ENABLED=1
