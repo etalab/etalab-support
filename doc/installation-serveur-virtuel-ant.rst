@@ -393,8 +393,42 @@ Tester que fedmsg fonctionne correctement en lançant dans 3 terminaux différen
   echo "Hello, world" | fedmsg-logger
 
 
+Installation de circus-fedmsg
+-----------------------------
+
+Regarder les paquets nécessaires pour circus ::
+
+  pip install --no-install circus
+
+Installer circus ::
+
+  pip install circus
+
+En tant qu'etalab ::
+
+  cd ~/repositories/
+  git init --bare circus-fedmsg.ant.data.gouv.fr.git
+  cd ..
+  git clone repositories/circus-fedmsg.ant.data.gouv.fr.git/
+  cd circus-fedmsg.ant.data.gouv.fr
+  mkdir ipc
+
+En tant que root ::
+
+  cd /var/log/
+  mkdir circus-fedmsg
+
+  cd /etc/logrotate.d/
+  ln -s /home/etalab/circus-fedmsg.ant.data.gouv.fr/circus-fedmsg.logrotate circus-fedmsg
+
+  cd /etc/init.d/
+  ln -s /home/etalab/circus-fedmsg.ant.data.gouv.fr/circus-fedmsg.init circus-fedmsg
+  update-rc.d circus-fedmsg defaults
+  service circus-fedmsg restart
+
+
 Installation de fedmsg-emit.php
-===============================
+-------------------------------
 
 Installer les bindings PHP pour zmq ::
 
