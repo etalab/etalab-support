@@ -277,11 +277,11 @@ En tant que root ::
 
 En tant qu'etalab ::
 
-  cd
-  mkdir repositories
-  cd repositories/
+  cd ~/repositories/
+  git init --bare data.gouv.fr-certificates.git
   git init --bare wiki.data.gouv.fr.git
   cd
+  git clone repositories/data.gouv.fr-certificates.git/
   mkdir vhosts
   cd vhosts/
   git clone ../repositories/wiki.data.gouv.fr.git
@@ -294,6 +294,8 @@ En tant que root ::
 
   cd /home/etalab/vhosts/wiki.data.gouv.fr/mediawiki/
   chown www-data. images/
+
+  a2enmod ssl
 
   cd /etc/apache2/sites-available/
   ln -s /home/etalab/vhosts/wiki.data.gouv.fr/config/apache2.conf wiki.data.gouv.fr.conf
@@ -406,7 +408,9 @@ Installer circus ::
 
 En tant qu'etalab ::
 
-  cd ~/repositories/
+  cd
+  mkdir repositories
+  cd repositories/
   git init --bare circus-fedmsg.ant.data.gouv.fr.git
   cd ..
   git clone repositories/circus-fedmsg.ant.data.gouv.fr.git/

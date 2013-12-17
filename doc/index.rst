@@ -19,6 +19,7 @@ Contents:
    installation-serveur-virtuel-bat
    installation-serveur-virtuel-cat
    supervision
+   certificats
 
 
 Indices and tables

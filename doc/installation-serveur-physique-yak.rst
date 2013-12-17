@@ -579,8 +579,10 @@ En tant qu'etalab ::
   cd
   mkdir repositories
   cd repositories/
+  git init --bare data.gouv.fr-certificates.git
   git init --bare stats.data.gouv.fr.git
   cd
+  git clone repositories/data.gouv.fr-certificates.git/
   mkdir vhosts
   cd vhosts/
   git clone ../repositories/stats.data.gouv.fr.git
@@ -594,6 +596,8 @@ En tant que root ::
 
   chown -R www-data:www-data /home/etalab/vhosts/stats.data.gouv.fr/piwik
   chmod -R 0755 /home/etalab/vhosts/stats.data.gouv.fr/piwik/tmp
+
+  a2enmod ssl
 
   cd /etc/apache2/sites-available/
   ln -s /home/etalab/vhosts/stats.data.gouv.fr/config/apache2.conf stats.data.gouv.fr.conf

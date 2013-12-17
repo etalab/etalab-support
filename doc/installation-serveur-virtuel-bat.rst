@@ -230,7 +230,7 @@ En tant qu'etalab ::
 
 En tant que root ::
 
-  dpkg -i /home/etalab/node.js/src/node-v0.10.23/node_*.deb
+  dpkg -i /home/etalab/node.js/node-v0.10.23/node_*.deb
   npm install -g bower less uglify-js
 
 
@@ -292,7 +292,9 @@ Installer circus ::
 
 En tant qu'etalab ::
 
-  cd ~/repositories/
+  cd
+  mkdir repositories
+  cd repositories/
   git init --bare circus-fedmsg.bat.data.gouv.fr.git
   cd ..
   git clone repositories/circus-fedmsg.bat.data.gouv.fr.git/
@@ -374,9 +376,10 @@ En tant qu'etalab (toujours dans le virtualenv "default") ::
   cd ~
 
   git clone https://github.com/etalab/biryani.git
-  cd biryany
+  cd biryani
   git checkout biryani1
   python setup.py develop --no-deps
+  python setup.py compile_catalog
   cd ..
 
   git clone https://github.com/etalab/ckanext-etalab.git
@@ -404,9 +407,14 @@ En tant qu'etalab (toujours dans le virtualenv "default") ::
   git clone https://github.com/etalab/weckan.git
   cd weckan
   python setup.py develop --no-deps
+  python setup.py compile_catalog
   bower install
   ./setup.py build_assets
   cd ..
+
+Réinstaller fedmsg dans le virtualenv ::
+
+  pip install fedmsg
 
 En tant que root, éditer le fichier ``/etc/default/jetty`` pour y mettre les lignes ::
 
@@ -437,23 +445,58 @@ Tester son bon fonctionnement, en tant qu'etalab ::
 
 Revenir en tant qu'etalab ::
 
-  cd ~
-  mkdir repositories
-  cd repositories/
+  cd ~/repositories/
+  git init --bare data.gouv.fr-certificates.git
   git init --bare www.data.gouv.fr.git
+  cd
+  git clone repositories/data.gouv.fr-certificates.git/
 
 Sur le PC personnel, pusher le projet wwww.data.gouv.fr dans ce dépôt, puis ::
 
-  cd ~
   mkdir vhosts
   cd vhosts/
   git clone ../repositories/www.data.gouv.fr.git
 
 En tant que root ::
 
+  cd /home/etalab/vhosts/www.data.gouv.fr/
+  mkdir storage
+  chown www-data. storage
+
+Éditer le fichier ``/etc/apache2/ports.conf`` pour y ajouter la ligne ci-dessous dans chacun des blocs SSL ::
+
+  NameVirtualHost *:443
+
+En tant que root ::
+
+  a2enmod ssl
+
   cd /etc/apache2/sites-available/
   ln -s /home/etalab/vhosts/www.data.gouv.fr/config/apache2.conf www.data.gouv.fr.conf
   cd ../sites-enabled/
   a2ensite www.data.gouv.fr.conf
   rm 000-default
+
+Réindexation de solr
+--------------------
+
+En tant qu'etalab ::
+
+  cd ~/ckan
+  source default/bin/activate
+  time paster --plugin=ckan search-index rebuild -r --config=../vhosts/www.data.gouv.fr/config/production.ini
+
+Installation d'etalab-ckan-scripts
+==================================
+
+  cd
+  git clone https://github.com/etalab/etalab-ckan-scripts.git
+
+
+Installation de la landing page
+===============================
+
+En tant qu'etalab ::
+
+  git clone https://github.com/etalab/landing-page.git
 

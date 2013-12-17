@@ -147,6 +147,7 @@ Créer le fichier ``/etc/apt/apt.conf.d/50norecommends`` pour y mettre la ligne 
 
 Installer les paquets manquants ::
 
+  aptitude install git
   aptitude install htop
   aptitude install less
   aptitude install molly-guard
@@ -206,3 +207,401 @@ Indexer la base et mettre à jour Postfix ::
 
   newaliases
   service postfix reload
+
+
+Installation de node.js
+=======================
+
+::
+
+  aptitude install build-essential
+  aptitude install checkinstall
+
+En tant qu'etalab ::
+
+  cd
+  mkdir node.js
+  cd node.js
+  mdir src
+  cd src
+  wget -N http://nodejs.org/dist/node-latest.tar.gz
+  tar xzvf node-latest.tar.gz && cd node-v*
+  ./configure
+  checkinstall #(remove the "v" in front of the version number in the dialog)
+
+En tant que root ::
+
+  dpkg -i /home/etalab/node.js/node-v0.10.23/node_*.deb
+  npm install -g bower less uglify-js
+
+
+Installation de fedmsg
+======================
+
+En tant que root ::
+
+  aptitude install python-pip
+
+Regarder les paquets nécessaires pour fedmsg ::
+
+  pip install --no-install fedmsg
+
+En installer le plus possible en utilisant les paquets Debian ::
+
+  aptitude install python-daemon
+  aptitude install python-decorator
+  aptitude install python-dev
+  aptitude install python-pygments
+  aptitude install python-twisted
+  aptitude install python-tz
+
+Installer fedmsg ::
+
+  pip install fedmsg
+  pip install requests
+
+Modifier le fichier ``/etc/fedmsg.d/base.py`` ::
+
+  environment = 'prod',
+  topic_prefix = 'fr.gouv.data',
+
+Dans ``/etc/fedmsg.d/endpoints.py``, commenter les endpoints existants et les remplacer par ::
+
+  "data-gouv-fr-infrastructure": [
+      "tcp://wiki.data.gouv.fr:9940",
+      "tcp://www.data.gouv.fr:9940",
+  ],
+
+Dans ``/etc/fedmsg.d/ssl.py``, supprimer la signature des messages ::
+
+  validate_signatures=False,
+
+Tester que fedmsg fonctionne correctement en lançant dans 3 terminaux différents ::
+
+  fedmsg-relay
+
+  fedmsg-tail --really-pretty
+
+  echo "Hello, world" | fedmsg-logger
+
+
+Installation de qa.data.gouv.fr
+===============================
+
+::
+
+  aptitude install libapache2-mod-wsgi
+  aptitude install mongodb-server
+  aptitude install python-babel
+  aptitude install python-html5lib
+  aptitude install python-isodate
+  aptitude install python-mako
+  aptitude install python-pymongo
+  aptitude install python-pymongo-ext
+  # aptitude install python-tz
+  aptitude install python-yaml
+  aptitude install python-weberror
+  aptitude install python-webob
+
+  pip install bleach
+  pip install cssmin
+  pip install markdown
+  # pip install requests
+  pip install webassets
+
+  npm install -g bower
+
+En tant qu'etalab ::
+
+  cd
+  git clone https://github.com/etalab/biryani.git
+
+En tant que root ::
+
+  cd /home/etalab/biryani
+  python setup.py develop --no-deps
+  python setup.py compile_catalog
+
+En tant qu'etalab ::
+
+  cd
+  git clone https://github.com/etalab/ckan-toolbox.git
+
+En tant que root ::
+
+  cd /home/etalab/ckan-toolbox
+  python setup.py develop --no-deps
+
+En tant qu'etalab ::
+
+  cd
+  git clone https://github.com/etalab/ckan-of-worms.git
+
+En tant que root ::
+
+  cd /home/etalab/ckan-of-worms
+  python setup.py develop --no-deps
+
+En tant qu'etalab ::
+
+  cd ~/ckan-of-worms
+  python setup.py compile_catalog
+  bower install
+  ./setup.py build_assets
+
+.. note:: Si la compilation échoue à cause d'une erreur d'encodage, utiliser les fichiers présents sur un PC local où le build_assets a réussi.
+
+En tant qu'etalab ::
+
+  cd
+  mkdir repositories
+  cd repositories/
+  git init --bare qa.data.gouv.fr.git
+  cd
+  mkdir vhosts
+  cd vhosts/
+  git clone ../repositories/qa.data.gouv.fr.git
+
+  cd ~/ckan-of-worms
+  ./ckanofworms/scripts/setup_app.py -v ~/vhosts/qa.data.gouv.fr/config/paste.ini
+
+
+En tant que root ::
+
+  cd /home/etalab/vhosts/qa.data.gouv.fr/
+  mkdir cache
+  chown www-data. cache
+
+  cd /etc/apache2/sites-available/
+  ln -s  /home/etalab/vhosts/qa.data.gouv.fr/config/apache2.conf qa.data.gouv.fr.conf
+  cd ../sites-enabled/
+  rm 000-default
+  a2ensite qa.data.gouv.fr.conf
+  service apache2 restart
+
+
+Installation de ws.data.gouv.fr
+===============================
+
+::
+
+  aptitude install python-gevent
+
+Regarder les paquets nécessaires pour chaussette & ws4py ::
+
+  pip install --no-install chaussette ws4py
+
+Installer chaussette & ws4py ::
+
+  pip install chaussette ws4py
+
+En tant qu'etalab ::
+
+  cd
+  git clone https://github.com/etalab/dactylo.git
+
+En tant que root ::
+
+  cd /home/etalab/dactylo
+  python setup.py develop --no-deps
+
+En tant qu'etalab ::
+
+  cd ~/dactylo
+  python setup.py compile_catalog
+  bower install
+  ./setup.py build_assets
+
+.. note:: Si la compilation échoue à cause d'une erreur d'encodage, utiliser les fichiers présents sur un PC local où le build_assets a réussi.
+
+En tant qu'etalab ::
+
+  cd ~/repositories/
+  git init --bare ws.data.gouv.fr.git
+  cd
+  cd vhosts/
+  git clone ../repositories/ws.data.gouv.fr.git
+  cd ws.data.gouv.fr/
+  mkdir ipc
+
+  cd ~/dactylo/
+  ./dactylo/scripts/setup_app.py -v ~/vhosts/ws.data.gouv.fr/config/paste.ini
+
+En tant que root ::
+
+  cd /home/etalab/vhosts/ws.data.gouv.fr/
+  mkdir cache
+  chown www-data. cache
+
+  cd /etc/apache2/sites-available/
+  ln -s  /home/etalab/vhosts/ws.data.gouv.fr/config/apache2.conf ws.data.gouv.fr.conf
+  a2ensite ws.data.gouv.fr.conf
+  service apache2 restart
+
+  cd /var/log/
+  mkdir circus-ws
+
+  cd /etc/logrotate.d/
+  ln -s /home/etalab/vhosts/ws.data.gouv.fr/config/circus-ws.logrotate circus-ws
+
+  cd /etc/init.d/
+  ln -s /home/etalab/vhosts/ws.data.gouv.fr/config/circus-ws.init circus-ws
+  update-rc.d circus-ws defaults
+  service circus-ws restart
+
+
+Installation de CowBots
+=======================
+
+En tant que root ::
+
+  pip install python-twitter
+  pip install requests-oauthlib
+
+En tant qu'etalab ::
+
+  cd
+  git clone https://github.com/etalab/cowbots.git
+
+
+Installation de circus-fedmsg
+=============================
+
+Regarder les paquets nécessaires pour circus ::
+
+  pip install --no-install circus
+
+Installer circus ::
+
+  pip install circus
+
+En tant qu'etalab ::
+
+  cd ~/repositories/
+  git init --bare circus-fedmsg.cat.data.gouv.fr.git
+  cd ..
+  git clone repositories/circus-fedmsg.cat.data.gouv.fr.git/
+  cd circus-fedmsg.cat.data.gouv.fr
+  mkdir ipc
+
+En tant que root ::
+
+  cd /var/log/
+  mkdir circus-fedmsg
+
+  cd /etc/logrotate.d/
+  ln -s /home/etalab/circus-fedmsg.cat.data.gouv.fr/circus-fedmsg.logrotate circus-fedmsg
+
+  cd /etc/init.d/
+  ln -s /home/etalab/circus-fedmsg.cat.data.gouv.fr/circus-fedmsg.init circus-fedmsg
+  update-rc.d circus-fedmsg defaults
+  service circus-fedmsg restart
+
+Tester que fedmsg fonctionne correctement en lançant dans 2 terminaux différents ::
+
+  fedmsg-tail --really-pretty
+
+  echo "Hello, world" | fedmsg-logger
+
+
+Installation de id.data.gouv.fr
+===============================
+
+::
+
+  aptitude install postgresql
+  aptitude install postgresql-server-dev-all
+  aptitude install python-virtualenv
+  aptitude install redis-server
+
+  npm install -g less yuglify
+
+  cd /var/log/
+  mkdir youckan
+  chmod go+wx youckan/
+
+En tant qu'etalab ::
+
+  cd
+  tar xzf youckan-0.1.0.dev.4992473.tar.gz
+  mv youckan-0.1.0.dev.4992473 youckan
+  cd youckan/
+
+  cd ~/repositories/
+  git init --bare data.gouv.fr-certificates.git
+  git init --bare id.data.gouv.fr.git
+  cd
+  git clone repositories/data.gouv.fr-certificates.git/
+  cd vhosts/
+  git clone ../repositories/id.data.gouv.fr.git
+  cd id.data.gouv.fr/
+  mkdir ipc
+  virtualenv .
+  source bin/activate
+  pip install ../../youckan-0.1.0.dev.c5d867d.tar.gz
+
+En tant que root ::
+
+  cd /home/etalab/vhosts/id.data.gouv.fr/
+  mkdir media
+  chown www-data. media/
+
+  su - postgres
+  createuser youckan -P
+    Enter password for new role: 
+    Enter it again: 
+    Shall the new role be a superuser? (y/n) n
+    Shall the new role be allowed to create databases? (y/n) n
+    Shall the new role be allowed to create more new roles? (y/n) n
+  createdb youckan -O youckan -E UTF8
+
+Revenir en tant qu'etalab ::
+
+  # youckan genconf --ini
+  #   Domain [youckan.com]: data.gouv.fr                                       
+  #   Public hostname [www.youckan.com]: id.data.gouv.fr
+  #   Log directory [/var/log/youckan]: 
+  #   Creating apache.conf
+  #   Creating nginx.conf
+  #   Creating youckan.wsgi
+  #   Creating youckan.ini
+
+  youckan init --noinput
+
+En tant que root ::
+
+  chown www-data. /var/log/youckan/id.data.gouv.fr.django.logs
+
+  cd /etc/apache2/sites-available/
+  ln -s  /home/etalab/vhosts/id.data.gouv.fr/apache.conf id.data.gouv.fr.conf
+  cd ../sites-enabled/
+  a2ensite id.data.gouv.fr.conf
+
+  a2enmod ssl
+  service apache2 restart
+
+  cd /var/log/
+  mkdir circus-id
+
+  cd /etc/logrotate.d/
+  ln -s /home/etalab/vhosts/id.data.gouv.fr/circus-id.logrotate circus-id
+
+  cd /etc/init.d/
+  ln -s /home/etalab/vhosts/id.data.gouv.fr/circus-id.init circus-id
+  update-rc.d circus-id defaults
+  service circus-id restart
+
+
+Mise à jour de YouCKAN
+======================
+
+En tant qu'etalab ::
+
+  cd vhosts/id.data.gouv.fr/
+  source bin/activate
+  pip install ../../youckan-0.1.0.dev.c5d867d.tar.gz
+  youckan init --noinput
+
+En tant que root ::
+
+  service apache2 force-reload
