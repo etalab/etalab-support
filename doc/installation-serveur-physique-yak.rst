@@ -186,7 +186,7 @@ On install mdadm & grub :
 
 Remarque : choisir d'installer grub sur sda et sdb.
 
-On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.11). Pour cela il faut modifier la varaible //GRUB_CMDLINE_LINUX_DEFAULT// dans le fichier ///etc/default/grub// et mettre la valeur //"rootdelay=8"//. Il faut ensuite lancer la commande :
+On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.11). Pour cela il faut modifier la variable ``GRUB_CMDLINE_LINUX_DEFAULT`` dans le fichier ``/etc/default/grub`` et mettre la valeur ``"rootdelay=8"``. Il faut ensuite lancer la commande :
 
 ::
 
@@ -364,21 +364,44 @@ On ajoute les hosts a monitorer en ajoutant dans le fichier */etc/munin/munin.co
       address ns236004.ovh.net
       use_node_name yes
 
-FIXME : configuration Apache, ...
+
+Configuration d'Apache
+----------------------
+
+::
+  
+  ln -s /etc/munin/apache.conf /etc/apache2/conf.d/munin
+
+Créer ensuite le fichier ``/etc/apache2/conf.d/munin-etalab`` ::
+
+  
+  <Location /munin/>
+  	Allow from all
+  </Location>
+  
+  <Location /munin-cgi/munin-cgi-html>
+  	Allow from all
+  </Location>
+  
+  <Location /munin-cgi/munin-cgi-graph>
+  	Allow from all
+  </Location>
+
+Recharger la configuration d'Apache ::
+  
+  service apache2 reload
+
+Munin est accessible à l'adresse http://yak.data.gouv.fr/munin/
 
 
 Installation du client
 ----------------------
 
-Installation du paquet debian
-
-::
+Installation du paquet debian ::
   
   apt-get install munin-node
 
-On autorise les connexions du serveur central en ajoutant dans le fichier */etc/munin/munin-node.conf* :
-
-::
+Autoriser les connexions du serveur central en ajoutant dans le fichier ``/etc/munin/munin-node.conf`` ::
   
   allow ^37\.187\.72\.214$
 
@@ -442,7 +465,7 @@ Installation du serveur central
 
 ::
 
-  apt-get install icinga nagios-nrpe-plugin
+  apt-get install icinga
   chmod g+rx /var/lib/icinga/rw
   adduser www-data nagios
   service apache2 stop
@@ -451,79 +474,87 @@ Installation du serveur central
 **Remarque :** Autoriser l'activation des *external commands* durant l'installation, accepter la configuration automatique d'apache et entrer le mot de passe *admin*.
 
 
-Préparation des noeuds ceph pour la supervision
------------------------------------------------
-
-* Sur **ns235513** :
-
-::
-
-  ceph auth get-or-create client.nagios mon 'allow r' > /etc/ceph/ceph.client.nagios.keyring
-  scp /etc/ceph/ceph.client.nagios.keyring 192.168.0.2:/etc/ceph/
-  ssh root@192.168.0.2 'chown nagios: /etc/ceph/ceph.client.nagios.keyring'
-  scp /etc/ceph/ceph.client.nagios.keyring 192.168.0.3:/etc/ceph/
-  ssh root@192.168.0.3 'chown nagios: /etc/ceph/ceph.client.nagios.keyring'
+Installation des plugins supplémentaires
+----------------------------------------
 
 
-Installation du client NRPE
----------------------------
+check_etalab_nrpe
+~~~~~~~~~~~~~~~~~
 
 ::
   
-  apt-get install nagios-nrpe-server nagios-plugins
+  apt-get install nagios-nrpe-plugin
 
-Installation des plugins supplémentaires :
-
-::
-  
-  git clone https://github.com/glensc/nagios-plugin-check_raid /usr/local/src/nagios-plugin-check_raid
-  mkdir -p /usr/local/lib/nagios/plugins
-  ln -s /usr/local/src/nagios-plugin-check_raid/check_raid.pl /usr/local/lib/nagios/plugins/check_raid.pl
-  echo "nagios ALL=NOPASSWD: /usr/lib/nagios/plugins/check_apt -u -U -t 60" > /etc/sudoers.d/nagios-apt
-  chmod 0440 /etc/sudoers.d/nagios-apt
-
-Installation de la configuration des checks :
-
-::
-    
-  echo "command[check_apt]=sudo /usr/lib/nagios/plugins/check_apt -u -U -t 60" > /etc/nagios/nrpe.d/apt.cfg
-  echo "command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 15% -c 10% -W 15% -K 10% -l -x /dev/shm -e -m" > /etc/nagios/nrpe.d/disk.cfg
-  echo "allowed_hosts=37.187.72.214" > /etc/nagios/nrpe.d/etalab.cfg
-  echo "command[check_load]=/usr/lib/nagios/plugins/check_load -w 3,5,7 -c 6,8,10" > /etc/nagios/nrpe.d/load.cfg
-  echo "command[check_ntp]=/usr/lib/nagios/plugins/check_ntp -H localhost -w 30 -c 60" > /etc/nagios/nrpe.d/ntp.cfg
-  echo "command[check_raid]=/usr/local/lib/nagios/plugins/check_raid.pl" > /etc/nagios/nrpe.d/raid.cfg
-  echo "command[check_swap]=/usr/lib/nagios/plugins/check_swap -w 40% -c 20%" > /etc/nagios/nrpe.d/swap.cfg
-  
-  service nagios-nrpe-server restart
-
-
-Installation du plugin de supervision Ceph
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**A faire sur les trois noeuds Ceph**
-
-Installation du plugin :
+Définition de la commande de check Nagios :
 
 ::
   
-  git clone https://github.com/valerytschopp/ceph-nagios-plugins.git /usr/local/src/ceph-nagios-plugins
-  ln -s /usr/local/src/ceph-nagios-plugins/src/check_ceph_health /usr/local/lib/nagios/plugins/check_ceph_health
-  
-  git clone http://git.zionetrix.net/git/check_ceph_usage /usr/local/src/check_ceph_usage
-  ln -s /usr/local/src/check_ceph_usage/check_ceph_usage /usr/local/lib/nagios/plugins/check_ceph_usage
-  
-  git clone http://git.zionetrix.net/git/check_ceph_status /usr/local/src/check_ceph_status
-  ln -s /usr/local/src/check_ceph_status/check_ceph_status /usr/local/lib/nagios/plugins/check_ceph_status
+  define command {
+        command_name    check_etalab_nrpe
+        command_line    /usr/lib/nagios/plugins/check_nrpe -t 90 -H $HOSTADDRESS$ -c $ARG1$
+  }
 
 
-Installation de la configuration des checks :
+check_etalab_ssl_cert
+~~~~~~~~~~~~~~~~~~~~~
 
 ::
-    
-  echo "command[check_ceph_health]=/usr/local/lib/nagios/plugins/check_ceph_health -d -i nagios -k /etc/ceph/ceph.client.nagios.keyring" > /etc/nagios/nrpe.d/ceph.cfg
-  echo "command[check_ceph_usage]=/usr/local/lib/nagios/plugins/check_ceph_usage -i nagios -k /etc/ceph/ceph.client.nagios.keyring --warning-data 50 --critical-data 60 --warning-allocated 80 --critical-allocated 90" >> /etc/nagios/nrpe.d/ceph.cfg
-  echo "command[check_ceph_status]=/usr/local/lib/nagios/plugins/check_ceph_status -i nagios -k /etc/ceph/ceph.client.nagios.keyring" >>/etc/nagios/nrpe.d/ceph.cfg
-  service nagios-nrpe-server reload
+ 
+  apt-get install nmap 
+  cd /usr/local/lib/nagios/plugins
+
+Mettre en place ensuite le script *check_ssl_cert* dans */usr/local/lib/nagios/plugins* avec les droits *0755*.
+
+Définition de la commande de check Nagios :
+
+::
+  
+  define command {
+        command_name    check_etalab_ssl_cert
+        command_line    /usr/local/lib/nagios/plugins/check_ssl_cert -H $HOSTADDRESS$ -p $ARG1$
+  }
+
+
+check_etalab_webinject
+~~~~~~~~~~~~~~~~~~~~~~
+
+::
+  
+  apt-get install libwebinject-perl nagios-plugins-contrib
+  mkdir /etc/webinject
+  echo "<useragent>check_http</useragent>
+  <timeout>10</timeout>
+  <globaltimeout>20</globaltimeout>
+  <reporttype>nagios</reporttype>" > /etc/webinject/webinject.xml
+  echo "<testcases repeat="1">
+  <case
+    id="1"
+    description1="Searching on www.data.gouv.fr"
+    method="get"
+    url="http://www.data.gouv.fr/fr/search?q=paris"
+    verifypositive=".small.*[1-9]+[0-9]*.r..sultats.*.\/small."
+    errormessage="Unable to retrieve a search on www.data.gouv.fr"
+  />
+  </testcases>" > /etc/webinject/www.data.gouv.fr.xml
+  echo "<testcases repeat="1">
+  <case
+    id="1"
+    description1="Page d'accueil wiki.data.gouv.fr"
+    method="get"
+    url="http://wiki.data.gouv.fr/wiki/Accueil"
+    verifypositive=".h1 lang=.fr..*Accueil.*\/h1."
+    errormessage="Impossible de recupérer la page d'accueil de wiki.data.gouv.fr"
+  />
+  </testcases>" > /etc/webinject/wiki.data.gouv.fr.xml
+
+On peut ensuite définir la commande de check Nagios en conséquence :
+
+::
+  
+  define command {
+        command_name    check_etalab_webinject
+        command_line    /usr/lib/nagios/plugins/check_webinject -c /etc/webinject/webinject.xml /etc/webinject/$ARG1$.xml
+  }
 
 
 Installation du plugin de supervision du repos Git

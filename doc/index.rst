@@ -18,6 +18,8 @@ Contents:
    installation-serveur-virtuel-ant
    installation-serveur-virtuel-bat
    installation-serveur-virtuel-cat
+   installation-serveur-sauvegarde
+   configuration-de-base-serveur
    supervision
    certificats
 

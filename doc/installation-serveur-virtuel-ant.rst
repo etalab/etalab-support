@@ -511,3 +511,115 @@ Tester que l'extension fedmsg pour MediaWiki fonctionne correctement en lançant
 
 Et en modifiant une page du Wiki, un message de modification devrait apparaître dans la fenêtre du ``fedmsg-tail``.
 
+
+Installation du cache HTTP/HTTPS
+================================
+
+
+Mise en place de Varnish pour le cache HTTP
+-------------------------------------------
+
+On a connecté le disque SSD */dev/vdb* à la machine pour le stockage du cache Varnish. On doit le préparer et le monter pour son utilisation ::
+
+  pvcreate /dev/vdb
+  vgcreate vg_ant_ssd /dev/vdb
+  lvcreate -L20G -n varnish vg_ant_ssd
+  mkfs.ext4 /dev/vg_ant_ssd/varnish
+  tune2fs -i 0 -c 0 /dev/vg_ant_ssd/varnish
+  echo "/dev/mapper/vg_ant_ssd-varnish	/var/lib/varnish	ext4	defaults	0	0" >> /etc/fstab
+  mkdir /var/lib/varnish
+  mount -a
+
+Instalation ::
+
+  aptitude install varnish
+  service varnish stop
+
+Mise en place du fichier de configuration : */etc/varnish/etalab.vcl*
+
+Configuration du lancement du daemon *varnish* dans le fichier ``/etc/default/varnish`` ::
+
+  DAEMON_OPTS="-a :80 \
+               -T localhost:6082 \
+               -f /etc/varnish/etalab.vcl \
+               -S /etc/varnish/secret \
+               -s memory=malloc,4G \
+               -s ssd=file,/var/lib/varnish/cache,70%"
+
+On peut ensuite lancer le service.
+
+.. important:: Vanish ecoutera sur le port 80. Il est indispensable ce port soit disponible sur le serveur et donc qu'Apache tourne sur un autre port. Dans la configuration en place, Apache doit tourner sur le port 8080.
+
+::
+
+  service varnish start
+
+Mise en place du proxying HTTPS
+-------------------------------
+
+Il a été décidé de ne pas mettre de cache sur les accès HTTPS. Cependant, le trafic pointant sur le serveur *ant* et devant être redirigé vers la machine *bat* pour le site *www.data.gouv.fr*, un proxy HTTP a été mis en place dans la configuration du serveur Apache de *ant*. Pour cela, il faut :
+
+* Ajouter dans le fichier */etc/hosts* un enregistrement pour *www.data.gouv.fr* :
+
+::
+
+  echo "87.98.183.53	www.data.gouv.fr" >> /etc/hosts
+
+* Activation du module Apache *proxy_http* ::
+
+  a2enmod proxy_http
+  service apache2 restart
+
+* Mettre en place le fichier */etc/apache2/sites-available/www.data.gouv.fr.conf* ::
+
+  <VirtualHost *:443>
+      ServerName www.data.gouv.fr
+
+      DocumentRoot /var/www/empty
+
+      SSLEngine On
+
+      <Proxy *>
+          Order deny,allow
+          Allow from all
+      </Proxy>
+
+      ProxyRequests Off
+
+      ProxyPass / https://www.data.gouv.fr/ retry=2
+      ProxyPassReverse / https://www.data.gouv.fr/
+
+      SSLProxyEngine on
+
+      ErrorLog  /var/log/apache2/www.data.gouv.fr.error.log
+      CustomLog /var/log/apache2/www.data.gouv.fr.access.log combined
+  </VirtualHost>
+
+* Activer le *VirtualHost* ::
+
+  a2ensite www.data.gouv.fr.conf
+  service apache2 reload
+
+
+Quelques commandes de base de Varnish
+-------------------------------------
+
+
+Purge d'une URL du cache
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+  curl -X PURGE [url]
+
+**Avec :**
+  * **[url] :** l'URL à purger
+
+
+Forçage du rafraichissement d'une partie du site
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Varnish dispose d'un mécanisme de *ban* permettant cela. Par exemple, pour forcer le rafraichissement de tout le répertoire ``http://www.data.gouv.fr/images/`` , utiliser la commande ::
+
+  varnishadm
+      ban req.http.host == www.data.gouv.fr && req.url ~ ^/images/.*$
