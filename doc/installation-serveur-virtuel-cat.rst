@@ -268,8 +268,8 @@ Modifier le fichier ``/etc/fedmsg.d/base.py`` ::
 Dans ``/etc/fedmsg.d/endpoints.py``, commenter les endpoints existants et les remplacer par ::
 
   "data-gouv-fr-infrastructure": [
-      "tcp://wiki.data.gouv.fr:9940",
-      "tcp://www.data.gouv.fr:9940",
+      "tcp://ant.data.gouv.fr:9940",
+      "tcp://bat.data.gouv.fr:9940",
   ],
 
 Dans ``/etc/fedmsg.d/ssl.py``, supprimer la signature des messages ::
@@ -307,7 +307,10 @@ Installation de qa.data.gouv.fr
   pip install cssmin
   pip install markdown
   # pip install requests
-  pip install webassets
+
+  # Install a customized version of webassets that corrects UnicodeDecodeErrors.
+  # pip install webassets
+  pip install git+https://github.com/noirbizarre/webassets.git@for-weckan#egg=webassets
 
   npm install -g bower
 
@@ -380,6 +383,17 @@ En tant que root ::
   service apache2 restart
 
 
+Recopie du contenu de CKAN dans QA
+----------------------------------
+
+Avec l'interface web, créer un compte dans ``qa.data.gouv.fr``, le rendre administrateur et récupérer son API key pour la donner à tous les bots (champ ``ckan_of_worms.api_key`` dans ``circus-fedmsg.cat.data.gouv.fr/etalabbot.ini``).
+
+En tant qu'etalab ::
+
+  cd ../ckan-of-worms/
+  ./ckanofworms/scripts/harvest_ckan.py -a -v ~/circus-fedmsg.cat.data.gouv.fr/etalabbot.ini 
+
+
 Installation de ws.data.gouv.fr
 ===============================
 
@@ -449,6 +463,8 @@ En tant que root ::
   update-rc.d circus-ws defaults
   service circus-ws restart
 
+Avec l'interface web, créer un compte dans ``ws.data.gouv.fr``, le rendre administrateur et récupérer son API key pour la donner à tous les bots (champ ``dactylo.api_key`` dans ``circus-fedmsg.cat.data.gouv.fr/etalabbot.ini``)dans ``circus-fedmsg.cat.data.gouv.fr/etalabbot.ini``).
+
 
 Installation de CowBots
 =======================
@@ -502,6 +518,30 @@ Tester que fedmsg fonctionne correctement en lançant dans 2 terminaux différen
   fedmsg-tail --really-pretty
 
   echo "Hello, world" | fedmsg-logger
+
+
+Envoi de toutes les données présentes dans QA par fedmsg
+--------------------------------------------------------
+
+En tant qu'etalab ::
+
+  cd ~/ckan-of-worms/
+  ./ckanofworms/scripts/publish_fedmsg_updates.py -a -v ~/vhosts/qa.data.gouv.fr/config/paste.ini
+
+
+Envoi de tous les jeux de données de QA par fedmsg
+--------------------------------------------------
+
+  cd cowbots
+  ./check_datasets.py -v ~/circus-fedmsg.cat.data.gouv.fr/etalabbot.ini
+
+
+Administration de circus-fedmsg
+===============================
+
+En tant que root ::
+
+  circusctl --endpoint ipc:///home/etalab/circus-fedmsg.cat.data.gouv.fr/ipc/circus-endpoint.ipc
 
 
 Installation de id.data.gouv.fr
@@ -558,7 +598,7 @@ En tant que root ::
 Revenir en tant qu'etalab ::
 
   # youckan genconf --ini
-  #   Domain [youckan.com]: data.gouv.fr                                       
+  #   Domain [youckan.com]: data.gouv.fr
   #   Public hostname [www.youckan.com]: id.data.gouv.fr
   #   Log directory [/var/log/youckan]: 
   #   Creating apache.conf
@@ -570,6 +610,7 @@ Revenir en tant qu'etalab ::
 
 En tant que root ::
 
+  addgroup etalab www-data
   chown www-data. /var/log/youckan/id.data.gouv.fr.django.logs
 
   cd /etc/apache2/sites-available/
@@ -578,6 +619,13 @@ En tant que root ::
   a2ensite id.data.gouv.fr.conf
 
   a2enmod ssl
+
+Éditer le fichier ``/etc/apache2/ports.conf`` pour y ajouter la ligne ci-dessous dans chacun des blocs SSL ::
+
+  NameVirtualHost *:443
+
+En tant que root ::
+
   service apache2 restart
 
   cd /var/log/
@@ -605,3 +653,45 @@ En tant qu'etalab ::
 En tant que root ::
 
   service apache2 force-reload
+
+
+Installation de static.data.gouv.fr
+===================================
+
+En tant qu'etalab ::
+
+  cd ~/repositories/
+  git init --bare static.data.gouv.fr.git
+  cd
+  cd vhosts/
+  git clone ../repositories/static.data.gouv.fr.git
+
+En tant que root ::
+
+  cd /etc/apache2/sites-available/
+  ln -s  /home/etalab/vhosts/static.data.gouv.fr/config/apache2.conf static.data.gouv.fr.conf
+  a2ensite static.data.gouv.fr.conf
+  service apache2 restart
+
+
+Installation du virtual host apache par défaut
+==============================================
+
+En tant qu'etalab ::
+
+  git clone https://github.com/etalab/landing-page.git
+
+  cd ~/repositories/
+  git init --bare _default_.data.gouv.fr.git
+  cd
+  cd vhosts/
+  git clone ../repositories/_default_.data.gouv.fr.git
+
+En tant que root ::
+
+  cd /etc/apache2/sites-available/
+  ln -s  /home/etalab/vhosts/_default_.data.gouv.fr/config/apache2.conf _default_.data.gouv.fr.conf
+  cd ../sites-enabled/
+  ln -s ../sites-available/_default_.data.gouv.fr.conf 000-_default_.data.gouv.fr.conf
+  service apache2 restart
+

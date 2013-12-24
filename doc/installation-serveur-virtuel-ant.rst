@@ -297,6 +297,22 @@ En tant que root ::
 
   a2enmod ssl
 
+Créer le fichier ``/etc/apache2/conf.d/ssl`` ::
+
+  <IfModule mod_ssl.c>
+          NameVirtualHost *:443
+          SSLCertificateChainFile /home/etalab/data.gouv.fr-certificates/ca-wildcard-certificate-chain.pem
+          SSLCertificateFile /home/etalab/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.pem
+          SSLCertificateKeyFile /home/etalab/data.gouv.fr-certificates/private-key-raw.pem
+  </IfModule>
+
+Éditer le fichier ``/etc/apache2/ports.conf`` et remplacer 80 en 8080 dans les lignes ::
+
+  NameVirtualHost *:8080
+  Listen 8080
+
+En tant que root ::
+
   cd /etc/apache2/sites-available/
   ln -s /home/etalab/vhosts/wiki.data.gouv.fr/config/apache2.conf wiki.data.gouv.fr.conf
   cd ../sites-enabled/

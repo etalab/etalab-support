@@ -623,6 +623,8 @@ Créer le fichier ``/etc/cron.d/etalab`` ::
 
 Puis en tant que root ::
 
+  aptitude install php5-curl
+
   service cron restart
 
 Éditer le fichier ``/etc/php5/apache2/php.ini`` et mettre ::

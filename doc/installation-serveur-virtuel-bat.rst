@@ -490,6 +490,15 @@ Installation d'etalab-ckan-scripts
 ==================================
 
   cd
+  source ckan/default/bin/activate
+  git clone https://github.com/etalab/ckan-toolbox.git
+  cd ckan-toolbox/
+  ./setup.py develop --no-deps
+
+  pip install isodate
+
+  cd
+  git clone https://github.com/biryani/biryani.git
   git clone https://github.com/etalab/etalab-ckan-scripts.git
 
 
