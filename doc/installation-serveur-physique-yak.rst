@@ -20,7 +20,7 @@ Supprimer toute trace de l'ancien RAID :
 Histoire d'être sûr :
 
 ::
-  
+
   dd if=/dev/zero of=/dev/sda bs=1M count=100
   dd if=/dev/zero of=/dev/sdb bs=1M count=100
 
@@ -43,7 +43,7 @@ On met du LVM sur /dev/md0 :
   lvcreate -L5G -n var vg_ns3362306
   lvcreate -L1G -n tmp vg_ns3362306
   lvcreate -L2G -n swap vg_ns3362306
-  mkfs.ext4 /dev/vg_ns3362306/root 
+  mkfs.ext4 /dev/vg_ns3362306/root
   mkfs.ext4 /dev/vg_ns3362306/tmp
   mkfs.ext4 /dev/vg_ns3362306/var
   tune2fs  -i 0 -c 0 /dev/vg_ns3362306/root
@@ -121,11 +121,11 @@ On monte le /proc et /sys :
 
   # This file describes the network interfaces available on your system
   # and how to activate them. For more information, see interfaces(5).
-  
+
   # The loopback network interface
   auto lo
   iface lo inet loopback
-  
+
   auto eth0
   iface eth0 inet static
   	address 37.187.72.214
@@ -133,7 +133,7 @@ On monte le /proc et /sys :
   	network 37.187.72.0
   	broadcast 37.187.72.255
   	gateway 37.187.72.254
-  
+
 - /etc/resolv.conf :
 
 ::
@@ -168,7 +168,7 @@ Remarque : Durant l'installation des paquets, laisser les choix par défaut et c
 Configuration de alerte mail :
 
 ::
-  
+
   echo "root: supervision@etalab2.fr" >> /etc/aliases
   newaliases
 
@@ -209,7 +209,7 @@ Ajout d'un utilisateur etalab
 ------------------------------
 
 ::
-  
+
   adduser etalab
 
 **Remarque :** Pour la connexion SSH via une clé avec cette utilisateur, la clé doit être mise dans le fichier */etc/ssh/authorized_keys/etalab*.
@@ -265,7 +265,7 @@ Installation de fail2ban
 ========================
 
 ::
-  
+
   apt-get install fail2ban
 
 Le check SSH est activé par défaut avec un ban au bout de 6 erreurs. Ceci peut-être modifié en éditant le fichier */etc/fail2ban/jail.conf* et en modifiant le paramètre *maxretry* de la section *[ssh]*.
@@ -275,7 +275,7 @@ Pour faire en sorte que certaine IP ne soit jamais bannies, il faut éditer le p
 Etant donné que Fail2ban utilise des règles Netfilter pour bloquer les IP bannies et que nous mettons par ailleurs en place un pare-feu à base de règles Netfilter également, le service Fail2ban ne sera pas démarrer directement mais le sera via le script packetfilter qui manipulera également nos règles de pare-feu. Nous allons donc désactiver le lancement automatique de Fail2ban et faire en sorte que celui-ci ne soit pas réactiver en cas de mise à jour du paquet Debian :
 
 ::
-  
+
   insserv -r -f fail2ban
   echo "#! /bin/sh
   ### BEGIN INIT INFO
@@ -284,7 +284,7 @@ Etant donné que Fail2ban utilise des règles Netfilter pour bloquer les IP bann
   # Required-Stop:     $local_fs $remote_fs
   # Should-Start:      $time $network $syslog iptables firehol shorewall ipmasq arno-iptables-firewall
   # Should-Stop:       $network $syslog iptables firehol shorewall ipmasq arno-iptables-firewall
-  # Default-Start:     
+  # Default-Start:
   # Default-Stop:      0 1 2 3 4 5 6
   # Short-Description: Start/stop fail2ban
   # Description:       Start/stop fail2ban, a daemon scanning the log files and
@@ -306,7 +306,7 @@ Mettre en place les fichiers suivant (commun à tout les hyperviseurs) :
 Il faut ensuite activer le service au démarrage :
 
 ::
-  
+
   insserv packetfilter
 
 Arrêt/démarrage du parefeu
@@ -315,19 +315,19 @@ Arrêt/démarrage du parefeu
 Démarrage :
 
 ::
-  
+
   service packetfilter start
 
 Arrêt :
 
 ::
-  
+
   service packetfilter stop
 
 Status :
 
 ::
-  
+
   service packetfilter status
 
 
@@ -341,25 +341,25 @@ Installation du serveur central
 Installation du paquet debian
 
 ::
-  
+
   apt-get install munin apache2
 
 On ajoute les hosts a monitorer en ajoutant dans le fichier */etc/munin/munin.conf* :
 
 ::
-  
+
   [ns3362306.ovh.net]
     address ns3362306.ovh.net
     use_node_name yes
-  
+
   [ns235513.ovh.net]
       address ns235513.ovh.net
       use_node_name yes
-  
+
   [ns235977.ovh.net]
       address ns235977.ovh.net
       use_node_name yes
-  
+
   [ns236004.ovh.net]
       address ns236004.ovh.net
       use_node_name yes
@@ -369,26 +369,26 @@ Configuration d'Apache
 ----------------------
 
 ::
-  
+
   ln -s /etc/munin/apache.conf /etc/apache2/conf.d/munin
 
 Créer ensuite le fichier ``/etc/apache2/conf.d/munin-etalab`` ::
 
-  
+
   <Location /munin/>
   	Allow from all
   </Location>
-  
+
   <Location /munin-cgi/munin-cgi-html>
   	Allow from all
   </Location>
-  
+
   <Location /munin-cgi/munin-cgi-graph>
   	Allow from all
   </Location>
 
 Recharger la configuration d'Apache ::
-  
+
   service apache2 reload
 
 Munin est accessible à l'adresse http://yak.data.gouv.fr/munin/
@@ -398,11 +398,11 @@ Installation du client
 ----------------------
 
 Installation du paquet debian ::
-  
+
   apt-get install munin-node
 
 Autoriser les connexions du serveur central en ajoutant dans le fichier ``/etc/munin/munin-node.conf`` ::
-  
+
   allow ^37\.187\.72\.214$
 
 
@@ -412,7 +412,7 @@ Mise en place des plugins ceph pour Munin
 On prépare tout d'abord un utilisateur ceph pour munin (sur **ns235513**) :
 
 ::
-  
+
   ceph auth get-or-create client.munin mon 'allow r' > /etc/ceph/ceph.client.munin.keyring
   chown munin: /etc/ceph/ceph.client.munin.keyring
   chmod 400 /etc/ceph/ceph.client.munin.keyring
@@ -424,7 +424,7 @@ On prépare tout d'abord un utilisateur ceph pour munin (sur **ns235513**) :
 On récupère le repos git *contrib* du projet *Munin* :
 
 ::
-  
+
   apt-get install git-core
   cd /usr/local/src
   git clone http://git.zionetrix.net/git/munin-ceph-status
@@ -432,7 +432,7 @@ On récupère le repos git *contrib* du projet *Munin* :
 On met en place les plugins :
 
 ::
-  
+
   cd /etc/munin/plugins
   ln -s /usr/local/src/munin-ceph-status/ceph_status ceph_usage
   ln -s /usr/local/src/munin-ceph-status/ceph_status ceph_osd
@@ -441,7 +441,7 @@ On met en place les plugins :
 On configure le plugin en ajoutant le bloc suivant dans le fichier */etc/munin/plugin-conf.d/munin-node* :
 
 ::
-  
+
   [ceph_*]
   user munin
   env.ceph_keyring /etc/ceph/ceph.client.munin.keyring
@@ -450,7 +450,7 @@ On configure le plugin en ajoutant le bloc suivant dans le fichier */etc/munin/p
 On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins :
 
 ::
-  
+
   service munin-node restart
 
 Au prochain lancement du cron sur le serveur central, les nouveaux plugins seront détectés et graphés.
@@ -482,13 +482,13 @@ check_etalab_nrpe
 ~~~~~~~~~~~~~~~~~
 
 ::
-  
+
   apt-get install nagios-nrpe-plugin
 
 Définition de la commande de check Nagios :
 
 ::
-  
+
   define command {
         command_name    check_etalab_nrpe
         command_line    /usr/lib/nagios/plugins/check_nrpe -t 90 -H $HOSTADDRESS$ -c $ARG1$
@@ -499,8 +499,8 @@ check_etalab_ssl_cert
 ~~~~~~~~~~~~~~~~~~~~~
 
 ::
- 
-  apt-get install nmap 
+
+  apt-get install nmap
   cd /usr/local/lib/nagios/plugins
 
 Mettre en place ensuite le script *check_ssl_cert* dans */usr/local/lib/nagios/plugins* avec les droits *0755*.
@@ -508,7 +508,7 @@ Mettre en place ensuite le script *check_ssl_cert* dans */usr/local/lib/nagios/p
 Définition de la commande de check Nagios :
 
 ::
-  
+
   define command {
         command_name    check_etalab_ssl_cert
         command_line    /usr/local/lib/nagios/plugins/check_ssl_cert -H $HOSTADDRESS$ -p $ARG1$
@@ -519,7 +519,7 @@ check_etalab_webinject
 ~~~~~~~~~~~~~~~~~~~~~~
 
 ::
-  
+
   apt-get install libwebinject-perl nagios-plugins-contrib
   mkdir /etc/webinject
   echo "<useragent>check_http</useragent>
@@ -550,7 +550,7 @@ check_etalab_webinject
 On peut ensuite définir la commande de check Nagios en conséquence :
 
 ::
-  
+
   define command {
         command_name    check_etalab_webinject
         command_line    /usr/lib/nagios/plugins/check_webinject -c /etc/webinject/webinject.xml /etc/webinject/$ARG1$.xml
@@ -565,16 +565,16 @@ Installation du plugin de supervision du repos Git
 Installation du plugin :
 
 ::
-  
+
   git clone http://git.zionetrix.net/git/check_git_config /usr/local/src/check_git_config
   ln -s /usr/local/src/check_git_config/check_git_config /usr/local/lib/nagios/plugins/check_git_config
 
 Installation de la configuration des checks :
 
 ::
-  
+
   echo "nagios  ALL=NOPASSWD:/usr/local/lib/nagios/plugins/check_git_config" > /etc/sudoers.d/nagios-git-config
-  chmod 440 /etc/sudoers.d/nagios-git-config 
+  chmod 440 /etc/sudoers.d/nagios-git-config
   echo "command[check_git_config]=sudo /usr/local/lib/nagios/plugins/check_git_config /srv/common" > /etc/nagios/nrpe.d/config.cfg
   service nagios-nrpe-server reload
 
@@ -585,7 +585,7 @@ Installation de git
 On ajoute un utilisateur *git* :
 
 ::
-  
+
   adduser --home /srv/git --disabled-password git
 
 On met en place les clés SSH autorisées à se connecter au serveur via l'utilisateur *git* en ajoutant dans le fichier */etc/ssh/authorized_keys/git* les clés des utilisateurs *root* des hyperviseurs
@@ -693,3 +693,46 @@ Dans Piwik "Geolocation" page :
 * Setup automatic updates of GeoIP databases
   * Location Database: http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
   * Update databases every months
+
+
+Installation de sentry
+======================
+
+En tant que root:
+
+.. code-block:: bash
+
+  $ aptitude install build-essential python-dev python-setuptools postgresql-9.1 postgresql-server-dev-9.1 libpq-dev libapache2-mod-wsgi
+  $ easy_install pip
+  $ pip install virtualenv
+
+  $ su - postgres
+  $ createuser -S -D -R -P sentry
+    Enter password for new role: XXXX
+  $ createdb -O sentry sentry -E utf-8
+
+En tant qu'etalab:
+
+.. code-block:: bash
+
+  $ git init --bare repositories/sentry.data.gouv.fr.git
+  $ cd vhosts
+  $ git clone ~/repositories/sentry.data.gouv.fr.git
+  $ cd sentry.data.gouv.fr
+  $ virtualenv .
+  $ source bin/activate
+  $ pip install sentry[postgres]
+  $ sentry init sentry.conf.py
+  $ vim sentry.conf.py
+  $ sentry --config=sentry.conf.py upgrade
+  $ sentry --config=sentry.conf.py createsuperuser
+  $ sentry --config=sentry.conf.py repair --owner=axel
+
+En tant que root:
+
+..code-block:: bash
+
+  $ cd /etc/apache2/sites-available/
+  $ ln -s /home/etalab/vhosts/sentry.data.gouv.fr/apache.conf sentry.data.gouv.fr.conf
+  $ a2ensite sentry.data.gouv.fr.conf
+  $ service apache2 restart
