@@ -730,7 +730,7 @@ En tant qu'etalab:
 
 En tant que root:
 
-..code-block:: bash
+.. code-block:: bash
 
   $ cd /etc/apache2/sites-available/
   $ ln -s /home/etalab/vhosts/sentry.data.gouv.fr/apache.conf sentry.data.gouv.fr.conf
