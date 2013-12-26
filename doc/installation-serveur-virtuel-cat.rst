@@ -2,7 +2,7 @@
 Installation du serveur virtuel cat
 ***********************************
 
-Dans la console web OVH, associer l'adresse IP failover 87.98.165.65 à cat et lui donner l'adresse MAC 02:00:00:e4:27:1f 
+Dans la console web OVH, associer l'adresse IP failover 87.98.165.65 à cat et lui donner l'adresse MAC 02:00:00:e4:27:1f
 
 Aller sur le serveur physique wolf.data.gouv.fr, en tant que root ::
 
@@ -306,6 +306,7 @@ Installation de qa.data.gouv.fr
   pip install bleach
   pip install cssmin
   pip install markdown
+  pip install raven
   # pip install requests
 
   # Install a customized version of webassets that corrects UnicodeDecodeErrors.
@@ -391,7 +392,7 @@ Avec l'interface web, créer un compte dans ``qa.data.gouv.fr``, le rendre admin
 En tant qu'etalab ::
 
   cd ../ckan-of-worms/
-  ./ckanofworms/scripts/harvest_ckan.py -a -v ~/circus-fedmsg.cat.data.gouv.fr/etalabbot.ini 
+  ./ckanofworms/scripts/harvest_ckan.py -a -v ~/circus-fedmsg.cat.data.gouv.fr/etalabbot.ini
 
 
 Installation de ws.data.gouv.fr
@@ -588,8 +589,8 @@ En tant que root ::
 
   su - postgres
   createuser youckan -P
-    Enter password for new role: 
-    Enter it again: 
+    Enter password for new role:
+    Enter it again:
     Shall the new role be a superuser? (y/n) n
     Shall the new role be allowed to create databases? (y/n) n
     Shall the new role be allowed to create more new roles? (y/n) n
@@ -600,7 +601,7 @@ Revenir en tant qu'etalab ::
   # youckan genconf --ini
   #   Domain [youckan.com]: data.gouv.fr
   #   Public hostname [www.youckan.com]: id.data.gouv.fr
-  #   Log directory [/var/log/youckan]: 
+  #   Log directory [/var/log/youckan]:
   #   Creating apache.conf
   #   Creating nginx.conf
   #   Creating youckan.wsgi
