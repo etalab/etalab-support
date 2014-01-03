@@ -91,6 +91,7 @@ Activer l'interface réseau ``eth0`` ::
 
 Créer le fichier ``/etc/resolv.conf`` ::
 
+  search data.gouv.fr
   nameserver 213.186.33.99
 
 Remplacer le fichier ``/etc/apt/sources.list`` par ::
@@ -139,7 +140,8 @@ Dans ``/etc/hosts``, modifier la ligne ::
 
 en ::
 
-  127.0.1.1       bat.data.gouv.fr bat
+  127.0.0.1	localhost
+  87.98.183.53	bat.data.gouv.fr bat
 
 Créer le fichier ``/etc/apt/apt.conf.d/50norecommends`` pour y mettre la ligne ::
 

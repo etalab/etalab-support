@@ -139,7 +139,8 @@ Dans ``/etc/hosts``, modifier la ligne ::
 
 en ::
 
-  127.0.1.1       ant.data.gouv.fr ant
+  127.0.0.1       localhost
+  87.98.177.42    ant.data.gouv.fr ant
 
 Créer le fichier ``/etc/apt/apt.conf.d/50norecommends`` pour y mettre la ligne ::
 
