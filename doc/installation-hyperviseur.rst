@@ -1,6 +1,6 @@
-=============================
-Installation d'un hyperviseur
-=============================
+======================================
+Installation d'un hyperviseur chez Ovh
+======================================
 
 Installation de l'OS d'un hyperviseur à partir de la console rescue-pro d'OVH
 
@@ -661,9 +661,9 @@ On créé ensuite deux *pool ceph* pour *libvirt*, un pour le stockage *SSD* et 
   ceph osd pool set libvirt-ssd crush_ruleset 3
   ceph osd pool create libvirt-sata 200
 
-**Remarque :** Le nombre *200* correspond aux nombres de *Placement Group* calculé selon la méthode officielle expliqué ici : http://ceph.com/docs/master/rados/operations/placement-groups/
+**Remarque :** Le nombre *200* correspond au nombre de *Placement Group* calculé selon la méthode officielle expliquée ici : http://ceph.com/docs/master/rados/operations/placement-groups/
 
-On définie ensuite un niveau de réplication à 3 pour tout les pools :
+On défini ensuite un niveau de réplication à 3 pour tous les pools :
 
 ::
 
@@ -770,9 +770,11 @@ Creation d'une VM
 
 - Utiliser les commandes *create-virtual-machine-failover* ou *create-virtual-machine-ripe* pour créer la VM au niveau de Libvirt ::
 
+::
   create-virtual-machine-failover [nom-vm] [mac] [ssd]
 
-ou ::
+ou 
+::
 
   create-virtual-machine-ripe [nom-vm] [ssd]
 
@@ -784,11 +786,11 @@ ou ::
 
 
 
-Lancer ensuite la VM et faire l'installation de celle-ci. L'outil *virt-manager* sera grandement utile pour cela. La VM est configurée pour booter sur son disque-dur puis sinon sur son lecteur de CD-ROM connecté à l'ISO Debian située sur chaque hyperviseur dans */var/lib/libvirt/images/debian-7.2.0-amd64-netinst.iso*. En conséquence, une fois la VM installée, elle rebootera sans modification sur son disque-dur.
+Lancer ensuite la VM et faire l'installation de celle-ci. L'outil *virt-manager* sera grandement utile pour cela. La VM est configurée pour booter sur son disque-dur puis sinon sur son lecteur de CD-ROM connecté à l'ISO Debian situé sur chaque hyperviseur dans */var/lib/libvirt/images/debian-7.2.0-amd64-netinst.iso*. En conséquence, une fois la VM installée, elle rebootera sans modification sur son disque-dur.
 
 L'interface réseau est configurée pour utiliser le réseau publique, cependant il est pas possible de configurer cette interface depuis l'installeur au vue de la particularité de l'adressage OVH. Il faudra donc procéder à l'installation de base de la VM sans utiliser des dépôts réseaux.
 
-La VM a été créé avec des ressources *basiques*, à savoir 2 *vCPU* et 1Go de mémoire vives. Vous pouvez modifier cela dans *virt-manager* (ou en utilisant la commande *virsh edit [nom-vm]*). Un redémarrage complet (= *stop* puis *start*) peut-être nécessaire pour l'application de certaine de vos modifications.
+La VM a été créé avec des ressources *basiques*, à savoir 2 *vCPU* et 1Go de mémoire vive. Vous pouvez modifier cela dans *virt-manager* (ou en utilisant la commande *virsh edit [nom-vm]*). Un redémarrage complet (= *stop* puis *start*) peut-être nécessaire pour l'application de certaines modifications.
 
 Une fois l'installation terminé et toujours au travers la console de la VM, il faut réaliser la configuration de l'interface réseau. Pour cela, éditer le fichier */etc/network/interfaces* et ajouter le bloc suivant :
 
@@ -854,8 +856,8 @@ Arrêt forcé (=coupure de courant) d'une VM :
   virsh destroy [nom-vm]
 
 
-Migration du machine virtuelle
-------------------------------
+Migration d'une machine virtuelle
+---------------------------------
 
 Pour cela, il faut commencer par migrer l'adresse IP failover sur l'hyperviseur de destination dans la console OVH (dans *Accueil > Serveurs dédié > Services > IP Fail-Over > Basculer une IP Fail-Over vers un autre serveur*). Cette migration peut prendre plus de 5 minutes pour être effective. Pour miniser la coupure, vous pouvez attendre que la migration soit effective pour effectuer la migration de la VM.
 
@@ -863,11 +865,12 @@ Pour migrer la VM, connectez-vous sur l'hyperviseur la faisant tourner actuellem
 
 ::
 
-  virsh migrate --live test qemu+ssh://root@[IP serveur destination]/system
+  virsh migrate --live [test] qemu+ssh://root@[IP serveur destination]/system
 
 **Avec :**
 
 - **[IP serveur destination] :** l'adresse IP du serveur de destination (exemple : *192.168.0.2*)
+- **[test]:** Nom de la machine virtuel.
 
 **Remarque :** La migration de la VM peut également être faite via *virt-manager*. Pour cela, il faudra avoir ouvert une connexion sur l'hyperviseur source et l'hyperviseur de destination.
 
@@ -877,7 +880,7 @@ Pour migrer la VM, connectez-vous sur l'hyperviseur la faisant tourner actuellem
   - Editer le fichier */etc/network/interfaces* et modifier l'adresse IP de la passerelle par défaut dans la configuration de l'interface *eth0*. Il s'agit de toutes les IP finissant par *.254* normalement. Mettre à la place l'adresse IP de la passerelle par défaut de l'hyperviseur sur lequel la VM a été migré.
   - Réactiver l'interface *eth0* avec la commande *ifup eth0*
 
-.. note:: Visiblement, la VM continue a être joignable même après migration et avant d'avoir effectué le changement de la passerelle par défaut. Cependant, cette configuration n'est pas acceptée par OVH et il est indispensable de faire cette modification rapidement au risque de voir l'IP FailOver de la VM bloquée. Pour voir si les IPs bloquées, connectez-vous à la console OVH, aller dans la fiche du serveur dédié, *état du serveur* et enfin *Adresses IP Bloquées*. Une alerte mail est envoyée avant blocage en cas de detection de configuration incorrecte.
+.. note:: Visiblement, la VM continue à être joignable même après migration et avant d'avoir effectué le changement de la passerelle par défaut. Cependant, cette configuration n'est pas acceptée par OVH et il est indispensable de faire cette modification rapidement au risque de voir l'IP FailOver de la VM bloquée. Pour voir si des IPs sont bloquées, connectez-vous à la console OVH, aller dans la fiche du serveur dédié, *état du serveur* et enfin *Adresses IP Bloquées*. Une alerte mail est envoyée avant blocage, en cas de detection de configuration incorrecte.
 
 Lister les images disques du cluster ceph
 -----------------------------------------
@@ -888,11 +891,11 @@ Lister les images disques du cluster ceph
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 
-Pour plus d'information sur une image disque en particulier, utiliser la commande :
+Pour plus d'information sur une image disque en particulier, utilisez la commande :
 
 ::
   
@@ -900,7 +903,7 @@ Pour plus d'information sur une image disque en particulier, utiliser la command
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 
@@ -913,7 +916,7 @@ Supprimer l'image disque d'une VM
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 Agrandir une image disque
@@ -929,7 +932,7 @@ Agrandir une image disque
 **Avec :**
 
 - **[taille en Mb] :** la nouvelle taille de l'image disque en Mb
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 - Une fois le redimessionement fait, relancer la VM :
@@ -938,17 +941,17 @@ Agrandir une image disque
   
   virsh start [nom-vm]
 
-- Une fois la VM rebootée, il faut faire en sorte d'utiliser cette espace disque supplémentaire. Si vous utilisez *LVM*, cela passe par la commande *pvresize*. Si le *PV* est sur une partition, il faudra étendre la partition avant d'effectuer le *pvresize*.
+- Une fois la VM rebootée, il faut faire en sorte d'utiliser cet espace disque supplémentaire. Si vous utilisez *LVM*, cela passe par la commande *pvresize*. Si le *PV* est sur une partition, il faudra étendre la partition avant d'effectuer le *pvresize*.
 
 Réduire une image disque
 ------------------------
 
-- Commencer par réduire la taille disque utiliser sur la VM. Si vous utilisez *LVM*, il faudra :
+- Commencer par réduire la taille disque utilisée sur la VM. Si vous utilisez *LVM*, il faudra :
 
   - réduire le *PV* avec la commande *pvresize*. Il est conseillé de réduire plus que nécessaire et de réagrandir ensuite le *PV* à la taille exact du disque après redimenssionnement.
   - si le *PV* utilise une partition et nom pas un bloc device directement, il faudra également réduire la partition
 
-- Une fois l'espace disque exédentaire libéré, il faut stopper la VM
+- Une fois l'espace disque excédentaire libéré, il faut stopper la VM
 - Redimmensionner l'image disque de la VM avec la commande :
 
 ::
@@ -957,11 +960,11 @@ Réduire une image disque
 
 **Avec :**
 
-  - **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+  - **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
   - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 - Relancer ensuite la VM
-- Si nécessaire, il faut maintenant faire en forte d'utiliser le volume complètement. Référez-vous à la fin de la procédure d'extention d'une image disque pour plus d'infos.
+- Si nécessaire, il faut maintenant faire en sorte d'utiliser le volume complètement. Référez-vous à la fin de la procédure d'extention d'une image disque pour plus d'infos.
 
 Créer un snapshot d'une image disque
 ------------------------------------
@@ -972,12 +975,12 @@ Créer un snapshot d'une image disque
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 - **[nom-snap] :** le nom que vous voulez nommer votre snapshot. Ce nom doit être court, ne comporter que des caractères ASCII et sans espace ni caractère *compliqué*
 
-Lister les snapshot d'une image disque
---------------------------------------
+Lister les snapshots d'une image disque
+---------------------------------------
 
 
 ::
@@ -986,20 +989,20 @@ Lister les snapshot d'une image disque
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 
 Remettre un disque à l'état d'un snapshot précédent
 ---------------------------------------------------
 
-Cette opération consite a écraser toutes les modifications faites depuis un snapshot. Cette modification est **irréversible**. Il est cependant possible de faire un nouveau snapshot avant restauration afin de pouvoir revenir à l'état précédent si besoin est.
+Cette opération consite à écraser toutes les modifications faites depuis un snapshot. Cette modification est **irréversible**. Il est cependant possible de faire un nouveau snapshot avant restauration afin de pouvoir revenir à l'état précédent si besoin est.
 
 ::
   rbd snap rollback [pool]/[nom-vm]@[nom-snap]
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 - **[nom-snap] :** le nom du snapshot
 
@@ -1014,15 +1017,35 @@ Supprimer un snapshot d'une image disque
 
 **Avec :**
 
-- **[pool] :** le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
+- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
 - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
 - **[nom-snap] :** le nom du snapshot
 
+Redémarrage d'un hyperviseur
+============================
+
+Cette procédure explique comment redémarrer un des hyperviseur pour un besoin de maintenance.
+
+Il faut commencer par déplacer les VM tournant sur cet hyperviseur sur un autre. Pour cela assurez-vous tout d'abord que l'ensemble des VM de cet hypversiveur pourront tourner sans problème sur le second hyperviseur notamment en terme de mémoire vive disponible. Au besoin, réduiser temporairement la mémoire allouée aux VMs.
+
+Une fois cette vérification faire, suivre la procédure de migration d'une VM pour les migrer une à une.
+
+Une fois que l'hyperviseur ne fait plus tourner aucune VM, exectuer la commande suivant pour eviter une resynchronisation inutile durant l'indisponibilité de l'hyperviseur :
+
+::
+  
+  ceph osd set noout
+
+Vous pouvez maintenant redémmarer la machine. Au reboot repasser le service en mode normal :
+
+::
+  
+  ceph osd unset noout
 
 Installation et configuration de virt-manager sur un poste client
 =================================================================
 
-Installation sur une machine Debian Wheezie :
+Installation sur une machine Debian Wheezy :
 
 - Installer le paquet debian *virt-manager*
 - Lancer virt-manager
@@ -1032,6 +1055,6 @@ Installation sur une machine Debian Wheezie :
 - Dans méthode, choisir *SSH*
 - Dans nom d'utilisateur, entrer *etalab*
 - Dans Nom de l'hôte, entre le nom de domaine du serveur (exemple : *ns235977.ovh.net*)
-- Valider en cliquant sur le bouton *Connecter*
+- Validez en cliquant sur le bouton *Connecter*
 
 **Remarque :** Pour ne pas avoir à saisir votre mot de passe, vous pouvez mettre votre clé SSH sur chaque serveur dans le fichier */etc/ssh/authorized_keys/etalab*.
