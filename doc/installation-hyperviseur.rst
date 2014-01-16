@@ -773,8 +773,7 @@ Creation d'une VM
 ::
   create-virtual-machine-failover [nom-vm] [mac] [ssd]
 
-ou 
-::
+ou ::
 
   create-virtual-machine-ripe [nom-vm] [ssd]
 
