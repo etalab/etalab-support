@@ -365,6 +365,10 @@ Ensuite en tant qu'etalab ::
   ln -s ../config/LocalSettings.php
   cd skins
   git clone https://github.com/etalab/mediawiki-etalab-skin etalab
+  cd ../extensions
+  git clone https://github.com/DaSchTour/piwik-mediawiki-extension.git Piwik
+
+
 
 
 Installation de fedmsg
