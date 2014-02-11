@@ -403,8 +403,9 @@ Installation du plugin munin pour MongoDB
   service munin-node restart
 
 
-Mise en place des plugins ceph pour Munin
-"""""""""""""""""""""""""""""""""""""""""
+Mise en place des plugins munin pour CEPH
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 On prépare tout d'abord un utilisateur ceph pour munin (sur **ns235513**) ::
 
@@ -441,3 +442,43 @@ On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins ::
   service munin-node restart
 
 Au prochain lancement du cron sur le serveur centrale, les nouveaux plugin seront détectés et graphés.
+
+Mise en place des plugins munin pour HAProxy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+On installe munin ainsi que certaines dépendance nécessaire dans l'environnement d'haproxy ::
+
+    apt-get install munin-node munin-plugins-extra ca-certificates socat
+
+On installe le dépot contrib de munin ::
+
+    cd /usr/local/src/
+    git clone https://github.com/munin-monitoring/contrib.git /usr/local/src/munin-monitoring
+
+On met en place les plugins ::
+
+    ln -s /usr/local/src/munin-monitoring/plugins/haproxy/haproxy_rate_frontend /etc/munin/plugins/
+    ln -s /usr/local/src/munin-monitoring/plugins/haproxy/haproxy-sessions-by-servers /etc/munin/plugins/
+    ln -s /usr/share/munin/plugins/ip_ /etc/munin/plugins/ip_37.59.183.74
+    ln -s /usr/share/munin/plugins/ip_ /etc/munin/plugins/ip_37.59.183.75
+    ln -s /usr/share/munin/plugins/ip_ /etc/munin/plugins/ip_37.59.183.80
+    ln -s /usr/share/munin/plugins/ip_ /etc/munin/plugins/ip_37.59.183.81
+    ln -s /usr/share/munin/plugins/ip_ /etc/munin/plugins/ip_37.59.183.70
+    ln -s /usr/share/munin/plugins/if_ /etc/munin/plugins/if_eth0
+    ln -s /usr/share/munin/plugins/if_ /etc/munin/plugins/if_eth1
+    ln -s /usr/share/munin/plugins/if_ /etc/munin/plugins/if_eth2
+
+
+On configure le plugin en ajoutant le bloc suivant dans le fichier */etc/munin/plugin-conf.d/munin-node* ::
+    
+    [haproxy*]
+    user root
+    env.backend WEBUI-DEV API-DEV DATAGOUVFR WIKI-DATAGOUVFR STATIC-DATAGOUVFR
+    env.frontend WEBUI-DEV API-DEV DATAGOUVFR WIKI-DATAGOUVFR STATIC-DATAGOUVFR
+    env.socket /var/run/haproxy.stat
+
+On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins ::
+
+  service munin-node restart
+
+Au prochain lancement du cron sur le serveur centrale, les nouveaux plugins seront détectés et graphés.
+
