@@ -3,7 +3,7 @@ Installation d'une vm dans le lan
 
 Les machines présentes dans le Lan sont celles qui par opposition ne se trouvent pas dans la ferme de calcul prévue pour accueillir les vm API.
 
-L'adressage de ce réseau est le suivant ::
+L'adressage de ce réseau Lan est le suivant ::
     
     10.10.10.0/24
 
@@ -57,12 +57,12 @@ On édite le fichier ``/etc/network/interfaces``
     # The primary network interface
     auto eth0
     iface eth0 inet static
-    address 10.10.10.xx
-    netmask 255.255.255.0
-    network 10.10.10.0
-    broadcast 10.10.10.255
-    gateway 10.10.10.254
-    mtu 1400
+        address 10.10.10.xx
+        netmask 255.255.255.0
+        network 10.10.10.0
+        broadcast 10.10.10.255
+        gateway 10.10.10.254
+        mtu 1400
 
 .. note:: Pour faciliter la saisie, un fichier d'exemple peut être utilisé comme il suit : cat /var/lib/etalabinstall/data/interfaces.template >> /etc/network/interfaces 
 

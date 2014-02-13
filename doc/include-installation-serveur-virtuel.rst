@@ -44,8 +44,11 @@ Exemple avec une machine à créer dans le lan::
 
     create-virtual-machine-ip-lan <nom vm> <storage type> <vxlan number>
 
-exemple::
+Help ::
+    create-virtual-machine-ip-lan -h
 
+exemple::
+    
     create-virtual-machine-ip-lan git sata 10
 
 Replication des données de libvirt
@@ -57,7 +60,7 @@ Ajout de la configuration au repository git
 ::
 
     cd /srv/common
-    git add etc/libvirt/qemu/git.xml
+    git add etc/libvirt/qemu/<nom vm>.xml
     git commit -a
     git push
 
@@ -65,14 +68,14 @@ Réplication des informations
 ****************************
 A cette étape le git local est défini et poussé sur le serveur git central. Il faut maintenant mettre à jour les autres hyperviseurs. Une fois positionné sur chaque hyperviseur, on exécute la commande suivante ::
     
-    cd /src/common && git pull 
+    cd /srv/common && git pull 
 
 
 Déclaration dans libvirt
 ************************
 De la même manière sur chaque hyperviseur, on exécute la commande suivante pour déclarer la nouvelle vm à libvirt. ::
     
-    virsh define /etc/libvirt/qemu/git.xml
+    virsh define /etc/libvirt/qemu/<nom vm>.xml
 
 Pour vérifier les informations qu'a libvirt sur les vm, on peux exécuter ::
 
