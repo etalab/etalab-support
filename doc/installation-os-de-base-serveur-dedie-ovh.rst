@@ -162,6 +162,7 @@ On ajoute les dépôts Debian suivant en plus de l'actuel :
 
   deb http://security.debian.org/ wheezy/updates main
   deb http://debian.data.gouv.fr/debian wheezy main
+  deb http://debian.mirrors.ovh.net/debian/ wheezy-backports main
 
 On effectue une installation de base :
 
@@ -173,11 +174,11 @@ On effectue une installation de base :
 
 Remarque : Durant l'installation des paquets, laisser les choix par défaut et choisir la locale **en_US.UTF-8**
 
-On installe un kernel :
+On installe un kernel livré par les backports wheezy, pour bénéfier du support de vxlan :
 
 ::
 
-  apt-get install linux-image-amd64
+  apt-get install linux-image-3.12-0.bpo.1-amd64
 
 Configuration de alerte mail :
 
