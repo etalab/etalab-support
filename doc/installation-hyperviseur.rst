@@ -864,7 +864,7 @@ Pour migrer la VM, connectez-vous sur l'hyperviseur la faisant tourner actuellem
 
 ::
 
-  virsh migrate --live [test] qemu+ssh://root@[IP serveur destination]/system
+  virsh migrate --live [test] qemu+ssh://root@[IP serveur destination]/system tcp://[IP server destination]
 
 **Avec :**
 
