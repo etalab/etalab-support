@@ -44,6 +44,12 @@ On ajoute les dépôts pour Sogo ::
     deb http://inverse.ca/debian wheezy wheezy
     deb http://ftp.fr.debian.org/debian/ wheezy-backports main contrib non-free
 
+    apt-key adv --keyserver hkp://keys.gnupg.net:80 --recv-key 0x810273C4
+
+    apt-get update
+    apt-get install sogo
+
+
 Configuration du webmail sogo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
