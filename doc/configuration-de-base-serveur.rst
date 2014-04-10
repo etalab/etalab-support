@@ -482,3 +482,33 @@ On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins ::
 
 Au prochain lancement du cron sur le serveur centrale, les nouveaux plugins seront détectés et graphés.
 
+Mise en place des plugins munin pour Varnish
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+On installe le dépôt de basiszwo ::
+
+    cd /usr/local/src/
+    git clone git://github.com/basiszwo/munin-varnish.git
+    chmod a+x /usr/share/munin/plugins/munin-varnish/varnish_*
+
+On met en place les plugins ::
+
+    cd /etc/munin/plugins
+    ln -s /usr/local/src/munin-varnish/varnish_cachehitratio 
+    ln -s /usr/local/src/munin-varnish/varnish_hitrate
+
+On configure les plugins ::
+
+    cat < EOF >> /etc/munin/plugin-conf.d/munin-node
+    
+    [varnish*]
+    user root
+    EOF
+    
+On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins ::
+
+  service munin-node restart
+
+Au prochain lancement du cron sur le serveur centrale, les nouveaux plugins seront détectés et graphés.
+
+
+

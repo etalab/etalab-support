@@ -21,7 +21,7 @@ Machine virtuelle de base
 Pour configurer une vm de base. Depuis la console de ``virt-manager`` effectuez les manipulations ci-après.
 
 Supprimer la partition todelete
-*******************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Si la partition suivante est présente, on la supprime. ::
   
     lvremove -f /dev/vg00/todelete
@@ -29,24 +29,22 @@ Si la partition suivante est présente, on la supprime. ::
 .. note:: Cette partition permet de corriger temporairement un bug relatif à une installation via preseed. 
 
 Modifier le hostname
-********************
+~~~~~~~~~~~~~~~~~~~~
 On édite le fichier ``/etc/hostname`` 
   
 Modifier le réseau
-******************
+~~~~~~~~~~~~~~~~~~
 Si la machine doit bénéficer d'une IP statique, ce qui est nécessaire lors de la création d'une machine délivrant un service, on définit un adressage particulier comme suit :
 
 
 On cherche une adresse ip libre et on renseigne le dns interne sur ns1.intra.data.gouv.fr ainsi que le reverse dns ::
 
+    rndc freeze intra.data.gouv.fr
     /etc/bind/zones/db.intra.data.gouv.fr
     /etc/bind/zones/reverses/db.10.10.10
+    rndc unfreeze intra.data.gouv.fr
 
 .. warning:: Ne pas oublier d'incrémenter le serial de la zone. 
-
-On reload la zone ::
-
-    rndc reload
 
 .. note:: Pour vérifier qu'il n'y a pas d'erreur, on peut consulter le fichier de log de bind dans ``/var/log/bind/bind.log`` 
 
@@ -70,7 +68,7 @@ On édite le fichier ``/etc/network/interfaces``
 Si la machine n'a pas besoin d'adresse ip statique, on ne configure pas le réseau. 
 
 Modifier le serveur de mail
-***************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Afin que la machine puisse communiquer par mail, on paramètre correctement le serveur de mail postfix afin de modifier son hostname ainsi que son serveur d'envoi ::
 
     sed -i s/debian/<nom vm>/ /etc/postfix/main.cf

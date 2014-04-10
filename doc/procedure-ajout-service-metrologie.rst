@@ -28,6 +28,7 @@ On installe le dépot contrib de munin ::
 
     cd /usr/local/src/
     git clone https://github.com/munin-monitoring/contrib.git /usr/local/src/munin-monitoring
+    
 
 Tester un plugin
 ~~~~~~~~~~~~~~~~

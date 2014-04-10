@@ -90,7 +90,7 @@ Les commandes rbd permettent de gérer les images disques issue de Ceph. ::
     rbd list [pool]                                 : afficher les images contenu dans les pools
     rbd info [pool]/[nom-vm]                        : afficher les information plus détaillées de l'image
     rbd rm [pool]/[nom-vm]                          : supprimer une image de vm.
-    rbd resize --size [taille] [pool]/[nom-vm]      : redimensionnement d'une image (la taille est en Mb) (Opération à faire à froid!)
+    rbd resize --size [taille] [pool]/[nom-vm]      : redimensionnement d'une image (la taille est en MB) (Opération à faire à froid!)
     rbd snap list                                   : afficher les snapshots existants
     rbd snap create [pool]/[nom-vm]@[nom snapshot]  : Créer un snapshot de la vm
     rbd snap rm [pool]/[nom-vm]@[nom snapshot]      : Supression du snapshot défini.
