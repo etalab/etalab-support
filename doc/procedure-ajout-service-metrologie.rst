@@ -2,7 +2,7 @@ Installation de l'agent Munin
 -----------------------------
 Sur la machine à sonder, on installe le packet munin ::
 
-  apt-get install munin-node munin-plugins-extra
+  apt-get install munin-node munin-plugins-extra libwww-perl
 
 On autorise les connexions du serveur centrale en ajoutant dans le fichier */etc/munin/munin-node.conf* ::
 
