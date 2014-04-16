@@ -6,6 +6,10 @@ Sur la machine à sonder, on installe le packet munin ::
 
 On autorise les connexions du serveur centrale en ajoutant dans le fichier */etc/munin/munin-node.conf* ::
 
+  allow ^10\.10\.10\.4$
+
+ou ::
+
   allow ^37\.187\.72\.214$
 
 Puis on relance le service ::
