@@ -2,15 +2,15 @@
 Installation du server mail
 ===========================
 
-Le serveur "mail" est utilisé comme stockage de mail. C'est sur ce serveur que les emails sont enregistrés et accédé par les clients finaux. Les services configurés pour ce faire sont les services suivant ::
+Le serveur "mail" est utilisé comme stockage de mail. C'est sur ce serveur que les emails sont enregistrés et accessibles pour les clients finaux. Les services configurés pour ce faire sont les services suivants ::
 
-    * Postfix : Pour gérer l'envoi, la réception et le routage des mails (Smtp)
+    * Postfix : Pour gérer l'envoi, la réception et le routage des mails (Smtp Smtps)
     * Dovecot : Pour gérer l'accès aux boites mails par les clients finaux (Imaps)
-    * SOGo    : Pour gérer un acces par webmail pour les clients finaux (Https)
+    * SOGo    : Pour gérer un accès par webmail pour les clients finaux (Https)
 
-La réception et l'envoi vis à vis de l'extérieur, sont gérer par un serveur smtp tierse lui aussi avec postifx.
+La réception et l'envoi vis à vis de l'extérieur sont gérés par un serveur smtp tiers, lui aussi avec postifx.
 
-L'installation et la configuration de chaque services vont être explosés ci-après.
+L'installation et la configuration de chaque service vont être exposées ci-après.
 
 
 .. include:: include-installation-serveur-virtuel-lan.rst
@@ -48,6 +48,53 @@ Service d'envoi/récéption (Postfix)
     dovecot   unix  -       n       n       -       -       pipe
      flags=DRhu user=vmail:mail argv=/usr/lib/dovecot/deliver -d ${recipient}
     EOF
+
+Activer SASL pour le smtp
+~~~~~~~~~~~~~~~~~~~~~~~~~
+/etc/postfix/
+
+master.cf
+submission inet n       -       -       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+
+main.cf
+# SASL Configuration
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_local_domain = $myhostname
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_tls_auth_only = yes
+smtpd_tls_security_level=may
+
+
+# SSL/TLS Configuration
+smtpd_tls_cert_file = /etc/ssl/private/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.crt
+smtpd_tls_key_file = /etc/ssl/private/data.gouv.fr-certificates/private-key-raw.key
+smtpd_tls_CAfile = /etc/ssl/private/data.gouv.fr-certificates/ca-wildcard-certificate-chain.crt
+smtpd_use_tls = yes
+
+#
+# SMTPd check
+#
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+smtpd_sender_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_non_fqdn_sender, reject_unknown_sender_domain
+
+
+/etc/dovecot/
+conf.d/10-master.conf
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0666
+    user = postfix
+    group = postfix
+  }
+
+conf.d/10-auth.conf
+     auth_mechanisms = plain login
+
 
 
 Service de gestion des boites mails 
@@ -88,9 +135,11 @@ Configuration du service imap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
 
-On défini les parametres du daemon dovecot dans le fichier **10-master.conf** ::
+On définit les parametres du daemon dovecot dans le fichier **10-master.conf**
 
-.. note:: D'autres valeur sont définies par défaut et on les laissent tel quel mais on comment pop3 qui ne sera pas utilisé ici. 
+.. note:: D'autres valeurs sont définies par défaut et on les laisse telles quelles. Néanmoins on commente pop3 qui ne sera pas utilisé ici. 
+
+:: 
 
     service imap-login {
         inet_listener imap {
@@ -109,9 +158,9 @@ On défini les parametres du daemon dovecot dans le fichier **10-master.conf** :
     }
     
 
-On défini les parametres relatif à la configuration des fichiers stockant les boites mails. Leurs emplacement, leurs type. Pour ce faire on edite le fichier **10-mail.conf**
+On définit les parametres relatifs à la configuration des fichiers stockant les boites mails. Leurs emplacements, leurs types. Pour ce faire on edite le fichier **10-mail.conf**
 
-On défini des boites mails au format Maildir ::
+On définit des boites mails au format Maildir ::
 
     mail_location = maildir:~/Maildir
     namespace inbox {
@@ -120,10 +169,11 @@ On défini des boites mails au format Maildir ::
         inbox = yes
     }
     
-On défini avec quel utilisateur le daemon dovecot va acceder aux Maildir ::
+On définit avec quel utilisateur le daemon dovecot va acceder aux Maildir ::
 
     mail_uid = vmail
     mail_gid = mail
+
 
 
 
@@ -137,7 +187,7 @@ On modifie le processus d'autentification de dovecot, en modifiant les valeurs c
 
 
 
-On renseigne les information concernant les certificats ssl à utiliser dans le fichier **10-ssl.conf** ::
+On renseigne les informations concernant les certificats ssl à utiliser dans le fichier **10-ssl.conf** ::
 
     ssl = yes
     ssl_cert = </etc/ssl/private/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.crt
@@ -146,7 +196,7 @@ On renseigne les information concernant les certificats ssl à utiliser dans le 
 
 
 
-On crée le fichier de configuration necessaire à la connexion a mysql et on postitionne les droits correctement :: 
+On crée le fichier de configuration necessaire à la connexion a mysql et on positionne les droits correctement :: 
 
     chmod 0600 dovecot-sql.conf.ext
 
@@ -167,7 +217,7 @@ On edite **dovecot-sql.conf.ext** et on renseigne les informations suivantes ::
 	             WHERE username = '%u' AND active = '1';
 
 
-On donne les droits de lecture à dovecot sur la base de donnée de postfixadmin et plus précisement sur la table mailbox ::
+On donne les droits de lecture à dovecot sur la base de données de postfixadmin et plus précisement sur la table mailbox ::
 
 	GRANT SELECT ON postfixadmin.mailbox TO 'dovecot'@'localhost' IDENTIFIED BY 'foobar_password';
 
@@ -176,15 +226,46 @@ On donne les droits de lecture à dovecot sur la base de donnée de postfixadmin
 Configuration du service de filtre
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Activation de managesieve (conf.d/20-managesieve.conf)
+Le service de filtre est nécessaire pour gérer les mails d'autoréponses que sogo va générer dans le cas d'une période de vacances pour l'utilisateur.
 
+On active donc sieve via les fichiers suivants :
+
+Pour **conf.d/20-managesieve.conf** 
+
+.. note:: D'autres valeurs sont définies par défaut et on les laisse telles quelles.
+
+::
+    service managesieve-login {
+    inet_listener sieve {
+        port = 4190
+    }
+    service_count = 1
+    }
+
+Pour **15-lda.conf** ::
+
+    protocol lda {
+    # Space separated list of plugins to load (default is global mail_plugins).
+    mail_plugins = $mail_plugins sieve
+    }
+
+Pour **90-sieve.conf** ::
+
+    plugin {
+        #sieve = ~/.dovecot.sieve
+        sieve_dir = ~/sieve
+    }
+
+On redemarre le service dovecot ::
+    
+    service dovecot restart
 
 Service de webmail
 ------------------
 
 Installation de Sogo
 ~~~~~~~~~~~~~~~~~~~~
-Pour l'installation de sogo, nous allons suivre les étapes ci dessous. En plus de sogo lui même, on installera également les dépendance nécessaire.
+Pour l'installation de sogo, nous allons suivre les étapes ci dessous. En plus de sogo lui même, on installera également les dépendances nécessaires.
 
 Ajout du dépôt fourni par l'éditeur Sogo ::
 
@@ -197,7 +278,7 @@ Ajout du dépôt fourni par l'éditeur Sogo ::
 On met à jour apt et on installe les packages nécessaires ::
 
     apt-get update
-    apt-get install sogo sope4.9-gdl1-mysql memcached apache2
+    apt-get install sogo sope4.9-gdl1-mysql memcached apache2 libapache2-mod-php5
 
     
     /usr/share/doc/tmpreaper/README.security.gz
@@ -271,7 +352,7 @@ On edite le fichier **/etc/sogo/sogo.conf**
 Configuration de sogo pour acceder la db de postfixadmin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On créer une vue sur la base de donnée de postfixadmin ::
+On crée une vue sur la base de données de postfixadmin ::
 
     USE postfixadmin;
     
@@ -284,12 +365,12 @@ On peut vérifier cette vue avec les requêtes suivantes ::
     SHOW FULL TABLES IN postfixadmin WHERE TABLE_TYPE LIKE 'VIEW';
     SELECT * FROM sogo_users;
 
-On créer un utilisateur qui sera utilisé par sogo pour acceder à la vue ::
+On crée un utilisateur qui sera utilisé par sogo pour acceder à la vue ::
 
     CREATE USER 'sogo'@'%' IDENTIFIED BY 'fooboar';
     GRANT SELECT ON postfixadmin.sogo_users TO 'sogo'@'%' IDENTIFIED BY 'foobar_password';
 
-Ensuite pour les besoin de sogo, on a besoin d'une base dédié, que l'on crée :: 
+Ensuite pour les besoins de sogo, on a besoin d'une base dédiée, que l'on crée :: 
 
     CREATE DATABASE `sogo` CHARACTER SET='utf8';
 
@@ -348,4 +429,64 @@ EOF
 On edite le fichier **/etc/apache2/sites-available/webmail.data.gouv.fr**
 
 a2ensite webmail.data.gouv.fr
+
+
+Autoconfiguration des clients lourds
+------------------------------------
+
+/etc/apache2/sites-available/autoconfig.data.gouv.fr
+<VirtualHost *:80>
+    ServerName autoconfig.data.gouv.fr
+    DocumentRoot /var/www/autoconfig/public_html
+
+        <Location />
+                AddDefaultCharset UTF-8
+                php_value magic_quotes_gpc off
+                php_value register_globals off
+        </Location>
+
+    RedirectMatch ^/$ http://sorry.data.gouv.fr
+
+
+    ErrorLog  /var/log/apache2/autoconfig.data.gouv.fr.error.log
+    CustomLog /var/log/apache2/autoconfig.data.gouv.fr.access.log combined
+</VirtualHost>
+
+a2ensite autoconfig.data.gouv.fr
+
+
+mkdir -p /var/www/autoconfig/public_html/mail
+
+vi /var/www/autoconfig/public_html/mail/config-v1.1.xml
+
+<clientConfig version="1.1">
+  <emailProvider id="data.gouv.fr">
+    <domain>data.gouv.fr</domain>
+    <displayName>data.gouv.fr - %EMAILLOCALPART%</displayName>
+    <displayShortName>Datagouvfr</displayShortName>
+    <incomingServer type="imap">
+      <hostname>imap.data.gouv.fr</hostname>
+      <port>993</port>
+      <socketType>SSL</socketType>
+      <username>%EMAILADDRESS%</username>
+      <authentication>password-cleartext</authentication>
+    </incomingServer>
+    <outgoingServer type="smtp">
+      <hostname>smtp.data.gouv.fr</hostname>
+      <port>587</port>
+      <socketType>STARTTLS</socketType>
+      <authentication>password-cleartext</authentication>
+      <username>%EMAILADDRESS%</username>
+    </outgoingServer>
+  </emailProvider>
+</clientConfig>
+
+https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration/FileFormat/HowTo
+
+
+Configuration d'activesync
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+apt-get install sogo-activesync
+
 
