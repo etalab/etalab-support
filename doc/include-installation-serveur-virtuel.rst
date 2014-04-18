@@ -1,5 +1,14 @@
 Installation automatisée via preseed
 ====================================
+
+A la fin de cette procédure vous aurez installés l'un des environement suivants :
+
+    * Une VM de base avec debian (base)
+    * Une VM de base avec debian + l'environnement de l'UI (ui)
+    * Une VM de base avec debian + l'environnement de l'UI de test (ui-test)
+    * Une VM de base avec debian + l'environnement de l'API (api)
+    * Une VM de base avec debian + l'environnement de l'APi de test (api-test)
+
 Choix de la machine hôte
 ------------------------
 Le choix de l'hyperviseur se fait en fonction des ressources disponibles. Voici quelques commandes pour les visualiser.
@@ -97,9 +106,7 @@ Pour vérifier les informations qu'a libvirt sur les vm, on peux exécuter ::
 Installation par la console
 ---------------------------
 
-On lance ``virt-manager`` depuis un ordinateur afin de démarrer la VM et s'y connecter en mode console. La machine boot via PXE et lance automatiquement une installation de base. 
+On lance ``virt-manager`` depuis un ordinateur afin de démarrer la VM et s'y connecter en mode console. La machine boot via PXE et lance automatiquement après 10 minutes, une installation de base. 
 
 Pour installer un environnement particulier, on peux renseigner le paramètre de boot qui est affiché. Par exemple **ui** ou **api**. Dans chacun des cas, l'installateur exécutera un script de post installation permettant la création des environnements relatifs à votre choix.
-
-
 
