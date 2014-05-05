@@ -12,6 +12,8 @@ Concernant les autres clients de messagerie comme les téléphones par exemple l
 
 Service IMAP (Réception)
 ------------------------
+::
+
   Utilisateur : foo@data.gouv.fr
   Password    : foobar
   Serveur IMAP     : imap.data.gouv.fr
@@ -20,6 +22,8 @@ Service IMAP (Réception)
 
 Server SMTP (Envoi)
 -------------------
+::
+
   Serveur : smtp.data.gouv.fr
   Type de sécurité : STARTTLS
   Port             :587
