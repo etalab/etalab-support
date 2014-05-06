@@ -67,6 +67,7 @@ On modifie la configuration par défaut avec les informations relatif à l'infra
     sed -i 's/inet_interfaces = localhost/inet_interfaces = all/' /etc/postfix/main.cf
     sed -i 's-mynetworks = 127.0.0.0/8-mynetworks = 127.0.0.0/8 10.10.10.7-' /etc/postfix/main.cf
     echo "relayhost = [smtp.intra.data.gouv.fr]" >> /etc/postfix/main.cf
+    echo "recipient_delimiter = +" >> /etc/postfix/main.cf
 
 On ajoute la configuration virutal de postfix ::
 
@@ -83,7 +84,7 @@ On déclare un service dovecot pour postfix ::
  
     cat < EOF >> /etc/postfix/master.cf
     dovecot   unix  -       n       n       -       -       pipe
-     flags=DRhu user=vmail:mail argv=/usr/lib/dovecot/deliver -d ${recipient}
+     flags=DRhu user=vmail:mail argv=/usr/lib/dovecot/dovecot-lda -f ${sender} -a ${recipient} -d ${user}@${nexthop}
     EOF
 	
 On route les mails vers dovecot afin qu'ils soient stockés ::
