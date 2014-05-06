@@ -2,16 +2,19 @@
 Installation du server mail
 ===========================
 
-Introduction
-============
-
-Le service Etalab au sein du SGMAP (Sécrétariat Général de la Modernisation de l'Action Publique) à décidé de mettre à disposition du publique un certain nombre de documentation relatif à son Système d'Information. 
+Préambule
+=========
+Le service Etalab au sein du SGMAP (Secrétariat Général de la Modernisation de l'Action Publique) à décidé de mettre à disposition du publique un certain nombre de documentation relatif à son Système d'Information. 
 
 Cette documentation technique à pour but de montrer comment le SGMAP assure son service de messagerie.
 
-Tous les services présent dans ce document fonctionnent sur un seul serveur virtuel. On a nommé ce serveur, le serveur "mail".
+Introduction
+============
+Tous les services présents dans ce document fonctionnent avec un seul serveur virtuel comme hôte d'hébergement. On a nommé ce serveur, "mail". 
 
-Les logiciels utilisés pour assurer les fonctionnalités sont les suivants ::
+La distribution Linux utilisé est Debian GNU/Linux dans sa dernière version à l'heure actuelle, Wheezy.
+
+Les logiciels utilisés pour assurer les fonctionnalités voulu sont les suivants ::
 
     * Postfix : Pour assurer l'envoi, la réception et le routage des mails (Protocols : Smtp et Smtps)
     * Dovecot : Pour assurer l'accès aux boites mails par les clients finaux (Protocol : Imaps)
@@ -40,12 +43,12 @@ On installe le serveur Mysql ::
 
   apt-get install mysql-server
 
-Dans le soucis d'un mimimum d'optimisation, on définit l'option suivante dans la configuration de mysql. ::
+Dans le soucis d'un mimimum d'optimisation, On définitt l'option suivante dans la configuration de mysql. ::
 
   echo "innodb_file_per_table = 1" >> /etc/mysql/my.cnf
 
 
-Service d'envoi/récéption (Postfix)
+Service d'envoi/réception (Postfix)
 -----------------------------------
 
 Le serveur postfix va assurer les fonctions suivantes :
@@ -53,7 +56,7 @@ Le serveur postfix va assurer les fonctions suivantes :
     - Envoi du courier pour les services présents sur ce serveur, 
     - Réception des emails des utilisateurs,
     - Envoi du courier pour les utilisateur authentifiés,
-    - Authentifier les utilisateurs avec SASL bindé sur Dovecot,
+    - Authentifier les utilisateurs avec SASL via Dovecot,
 
 On installe le serveur postfix. ::
 
@@ -96,43 +99,52 @@ On route les mails vers dovecot afin qu'ils soient stockés ::
 
 Activer SASL
 ~~~~~~~~~~~~
+SASL va être utilisé pour authentifier les utilisateurs de notre organisation, afin que seulement ceux-ci puissent envoyer des emails par le biai de notre serveur de mail. 
 
-On configure les fonctionnalités SASL de postfix ::
+Les fonctionnalités SASL vont être activées uniquement sur le port submission(587) prévu par la rfc6409.
+
+En outre, nous avons choisi d'authentifier nos utilisateurs via dovecot qui lui même s'apuit sur la base mysql comme base de donnée utilisateur. Cette réalisation est trivial et évite les multiples configuration de mysql en backend des serivces postfix & co.
+
+On configure les fonctionnalités SASL de postfix. 
 
 vi /etc/postfix/master.cf ::
-submission inet n       -       -       -       -       smtpd
-  -o syslog_name=postfix/submission
-  -o smtpd_tls_security_level=encrypt
-  -o smtpd_sasl_auth_enable=yes
-  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
 
-vi /etc/postfix/main.cf
-# SASL Configuration
-smtpd_sasl_auth_enable = yes
-smtpd_sasl_local_domain = $myhostname
-smtpd_sasl_security_options = noanonymous
-smtpd_sasl_type = dovecot
-smtpd_sasl_path = private/auth
-smtpd_tls_auth_only = yes
-smtpd_tls_security_level=may
+    submission inet n       -       -       -       -       smtpd
+    -o syslog_name=postfix/submission
+    -o smtpd_tls_security_level=encrypt
+    -o smtpd_sasl_auth_enable=yes
+    -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+
+vi /etc/postfix/main.cf ::
+
+	# SASL Configuration
+	smtpd_sasl_auth_enable = yes
+	smtpd_sasl_local_domain = $myhostname
+	smtpd_sasl_security_options = noanonymous
+	smtpd_sasl_type = dovecot
+	smtpd_sasl_path = private/auth
+	smtpd_tls_auth_only = yes
+	smtpd_tls_security_level=may
 
 
-# SSL/TLS Configuration
-smtpd_tls_cert_file = /etc/ssl/private/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.crt
-smtpd_tls_key_file = /etc/ssl/private/data.gouv.fr-certificates/private-key-raw.key
-smtpd_tls_CAfile = /etc/ssl/private/data.gouv.fr-certificates/ca-wildcard-certificate-chain.crt
-smtpd_use_tls = yes
+	# SSL/TLS Configuration
+	smtpd_tls_cert_file = /etc/ssl/private/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.crt
+	smtpd_tls_key_file = /etc/ssl/private/data.gouv.fr-certificates/private-key-raw.key
+	smtpd_tls_CAfile = /etc/ssl/private/data.gouv.fr-certificates/ca-wildcard-certificate-chain.crt
+	smtpd_use_tls = yes
 
 .. note :: Les certificats ont été préalablement générés via un organisme tiers. 
 
-#
-# SMTPd check
-#
-smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
-smtpd_sender_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_non_fqdn_sender, reject_unknown_sender_domain
+::
+
+	#
+	# SMTPd check
+	#
+	smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+	smtpd_sender_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_non_fqdn_sender, reject_unknown_sender_domain
 
 
-La gestion de l'authentification des utilisateurs est déléguée à dovecot. Il faut donc activer une socket unix sur le serveur dovecot pour que postfix puisse l'intérroger.
+La gestion de l'authentification des utilisateurs est déléguée à dovecot. On active une socket unix sur le serveur dovecot pour que postfix puisse l'intérroger.
 
 .. warning :: Les paramètres de configuration suivant, sont liés au serveur dovecot. Néanmoins, dans un soucis de compréhension, ils sont définis à cette endroit de la documentation. 
 
@@ -195,9 +207,10 @@ On installe le service Postfixadmin ::
 
 Les informations de configurations relative à la base de donnée sont enregistrées dans le fichier de configuration de postfixadmin ``/etc/postfixadmin/dbconfig.inc.php``
 
-On défini les requêtes sql que postfix devra effectuer pour lister les comptes email présents :
+On définit les requêtes sql que postfix devra effectuer pour lister les comptes emails présents :
 
 vi /etc/postfix/mysql_virtual_domains_maps.cf ::
+
       user            = postfix
       password        = *****************************
       hosts           = localhost
@@ -205,6 +218,7 @@ vi /etc/postfix/mysql_virtual_domains_maps.cf ::
       query           = SELECT domain FROM domain WHERE domain='%s' AND backupmx = '0' AND active = '1'
 
 vi /etc/postfix/mysql_virtual_mailbox_maps.cf ::
+
       user            = postfix
       password        = *****************************
       hosts           = localhost
@@ -212,6 +226,7 @@ vi /etc/postfix/mysql_virtual_mailbox_maps.cf ::
       query           = SELECT maildir FROM mailbox WHERE username='%s' AND active = '1'
 
 vi /etc/postfix/mysql_virtual_alias_maps.cf ::
+
       user            = postfix
       password        = **********************
       hosts           = localhost
@@ -227,7 +242,7 @@ L'accès à postfixadmin ce fait via ``https://pfa.data.gouv.fr``
 Service de gestion des boites mails (Dovecot)
 ---------------------------------------------
 
-Le service dovecot va assurer l'interface entre la base de mail au format MailDir et les clients de messagerie des utilisateurs finaux. Le protocol servie pour ce faire sera uniquement l'IMAPS.
+Le service dovecot va assurer l'interface entre la base de mail au format MailDir et les clients de messagerie des utilisateurs finaux. Le protocol servi pour ce faire sera uniquement l'IMAPS.
 
 En association avec managesieve, dovecot permettra également aux utilisateur de gérer des filtres de message.
 
@@ -254,7 +269,7 @@ Les certificats d'Etalab sont stockés sur un serveur Git interne.
 
 Préparation du filesystem
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-On défini un volume dédié au stockage des mails afin d'éviter le blocage du système en cas de remplissage complet du file system. ::
+On définit un volume dédié au stockage des mails afin d'éviter le blocage du système en cas de remplissage complet du file system. ::
 
     lvcreate -L 20g -n vmail vg00
     mkfs.ext4 /dev/vg00/vmail
@@ -265,12 +280,13 @@ On défini un volume dédié au stockage des mails afin d'éviter le blocage du 
 Création d'un utilisateur pour dovecot
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ::
+
     useradd -m -s /bin/false -d /srv/vmail vmail
     chown -R vmail:mail /srv/vmail
 
 Configuration du service imap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-On défini les parametres du daemon dovecot.
+On définit les parametres du daemon dovecot.
 
 .. note:: D'autres valeurs sont définies par défaut et on les laisse telles quelles. Néanmoins on commente pop3 qui ne sera pas utilisé ici. 
 
@@ -293,7 +309,7 @@ vi /etc/dovecot/conf.d/10-master.conf ::
     }
     
 
-On défini les parametres relatifs à la configuration des fichiers stockant les boites mails. Leurs emplacements, leurs types. Pour ce faire on edite le fichier **10-mail.conf**
+On définit les parametres relatifs à la configuration des fichiers stockant les boites mails. Leurs emplacements, leurs types. Pour ce faire on edite le fichier **10-mail.conf**
 
 vi /etc/dovecot/conf.d/10-mail.conf ::
 
@@ -311,7 +327,7 @@ vi /etc/dovecot/conf.d/10-mail.conf ::
 
 
 
-On modifie le processus d'autentification de dovecot, en modifiant les valeurs ci-dessous dans le fichier **10-auth.conf** ::
+On modifie le processus d'autentification de dovecot, en modifiant les valeurs ci-dessous dans le fichier **10-auth.conf**.
 
 vi /etc/dovecot/conf.d/10-auth.conf ::
 
@@ -321,7 +337,7 @@ vi /etc/dovecot/conf.d/10-auth.conf ::
 
 
 
-On renseigne les informations concernant les certificats ssl à utiliser dans le fichier **10-ssl.conf** ::
+On renseigne les informations concernant les certificats ssl à utiliser dans le fichier **10-ssl.conf**.
 
 vi /etc/dovecot/conf.d/10-ssl.conf ::
 
@@ -330,11 +346,11 @@ vi /etc/dovecot/conf.d/10-ssl.conf ::
     ssl_key = </etc/ssl/private/data.gouv.fr-certificates/private-key-raw.key
 
 
-On crée le fichier de configuration necessaire à la connexion à mysql et on positionne les droits correctement :: 
+On crée le fichier de configuration necessaire à la connexion à mysql et on positionne les droits correctement ::
 
     chmod 0600 dovecot-sql.conf.ext
 
-On edite **dovecot-sql.conf.ext** et on renseigne les informations suivantes ::
+On edite **dovecot-sql.conf.ext** et on renseigne les informations suivantes.
 
 vi /etc/dovecot/dovecot-sql.conf.ext ::
 
@@ -428,6 +444,7 @@ Configuration du webmail sogo
 On edite le fichier **/etc/sogo/sogo.conf**
 
 ::
+
      /* Database configuration (mysql://) */    
 	SOGoProfileURL = "mysql://bar:foobar@smtp.intra.data.gouv.fr:3306/sogodb/sogo_user_profile";
 	OCSFolderInfoURL = "mysql://bar:foobar@smtp.intra.data.gouv.fr:3306/sogodb/sogo_folder_info";
@@ -489,7 +506,7 @@ On edite le fichier **/etc/sogo/sogo.conf**
 Configuration de sogo pour acceder la db de postfixadmin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On créer une vue sur la base de données de postfixadmin ::
+On crée une vue sur la base de données de postfixadmin ::
 
     USE postfixadmin;
     
@@ -502,7 +519,7 @@ On peut vérifier cette vue avec les requêtes suivantes ::
     SHOW FULL TABLES IN postfixadmin WHERE TABLE_TYPE LIKE 'VIEW';
     SELECT * FROM sogo_users;
 
-On créer un utilisateur qui sera utilisé par sogo pour acceder à la vue ::
+On crée un utilisateur qui sera utilisé par sogo pour acceder à la vue ::
 
     CREATE USER 'sogo'@'%' IDENTIFIED BY 'fooboar';
     GRANT SELECT ON postfixadmin.sogo_users TO 'sogo'@'%' IDENTIFIED BY 'foobar_password';
@@ -541,7 +558,7 @@ On renseigne les certificats ssl qui seront utilisé par le serveur web ::
     </IfModule>
     EOF
 
-On défini un virtual host pour le webmail SOGo ::
+On définit un virtual host pour le webmail SOGo ::
 
     cat < EOF >> /etc/apache2/sites-available/webmail.data.gouv.fr
 	<VirtualHost *:80>
@@ -577,9 +594,10 @@ On active le site  ::
 
 Autoconfiguration des clients lourds
 ------------------------------------
-Le clients de messagerie que nous recommandons d'utiliser est Mozilla Thunderbird ou son dérivé pour Debian, IceDove. Afin de facilité la configuration de thunderbird pour les utilisateurs finaux, on définit un fichier d'autoconfiguration. Celui-ci sera mis à disponibilité du monde via apache2.
+Le clients de messagerie que nous recommandons d'utiliser est Mozilla Thunderbird ou son dérivé pour Debian, IceDove. 
+Afin de facilité la configuration de thunderbird pour les utilisateurs finaux, On définit un fichier d'autoconfiguration. Celui-ci sera mis à disponibilité du monde via apache2.
 
-On défini un virtual host pour l'autofiguration ::
+On définit un virtual host pour l'autofiguration.
 
 vi /etc/apache2/sites-available/autoconfig.data.gouv.fr ::
 
@@ -604,7 +622,7 @@ On active le site ::
 
     a2ensite autoconfig.data.gouv.fr
 
-On créer le fichier d'autoconfiguration avec les informations suivantes. ::
+On crée le fichier d'autoconfiguration avec les informations suivantes. ::
 
     mkdir -p /var/www/autoconfig/public_html/mail
 
