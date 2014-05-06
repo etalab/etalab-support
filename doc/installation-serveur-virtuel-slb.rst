@@ -57,7 +57,6 @@ Ajout des interfaces réseau relatives aux deux environnements sur les hypervise
 
 Configuration du systeme
 ========================
-
 Pare-feu (Netfilter)
 --------------------
 
@@ -94,6 +93,11 @@ Plus d'information ici :
 
   * https://wiki.d2france.fr/doku.php?id=blog:conntrackd
   * http://conntrack-tools.netfilter.org
+
+Synchronisation des OS
+~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME : Rédiger une doc relative a l'utilisation de git.
 
 Haute Disponibilité (Pacemaker)
 -------------------------------
@@ -347,8 +351,10 @@ On redémarre *munin-node* pour qu'il prenne en compte ces nouveaux plugins ::
 
   service munin-node restart
 
-Mise en place des plugins munin pour Pacemaker pour Icinga
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Supervision (Icinga)
+--------------------
+Mise en place d'un check icinga pour Pacemaker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Le plugins pour pacemaker est un plugin maison, localisé ici ::
 
     /usr/lib/nagios/plugins/check_crm_status_change
