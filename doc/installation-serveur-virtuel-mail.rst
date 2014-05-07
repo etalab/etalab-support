@@ -567,8 +567,7 @@ On définit un virtual host pour le webmail SOGo ::
 	    ServerAlias mail.data.gouv.fr
 	    DocumentRoot /var/www
 	
-	    RedirectMatch permanent ^/ https://webmail.data.gouv.fr/SOGo
-	    RedirectMatch permanent ^/SOGo https://webmail.data.gouv.fr/SOGo
+	    RedirectMatch permanent ^(.*)$ https://webmail.data.gouv.fr$1
 	
 	    ErrorLog  /var/log/apache2/webmail.data.gouv.fr.error.log
 	    CustomLog /var/log/apache2/webmail.data.gouv.fr.access.log combined
@@ -578,6 +577,8 @@ On définit un virtual host pour le webmail SOGo ::
 	    ServerName webmail.data.gouv.fr
 	    ServerAlias mail.data.gouv.fr
 	    DocumentRoot /var/www
+
+        RedirectMatch ^/$ https://webmail.data.gouv.fr/SOGo
 	
 	    SSLEngine on
 	
