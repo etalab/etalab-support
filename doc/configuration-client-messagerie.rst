@@ -1,7 +1,9 @@
 =======================
 Manuel de l'utilisateur
 ======================= 
-Outil de messagerie du SGMAP
+Comment configurer la messagerie du SGMAP/Etalab. 
+
+
 
 Configuration d'un client de messagerie via le protocol IMAP
 ============================================================
@@ -44,9 +46,17 @@ Ensuite cliquer sur "suivants, sélectionner "Exchange" puis renseigner les cham
 
 C'est fini.  
 
-Configuration d'un client iPhone via  le protocol ActiveSync
+Configuration d'un client iPhone via le protocol ActiveSync
 ============================================================
-Todo
+Aller dans les "Réglages" du téléphone. Dans la section "Mail,Contact, Calendrier", aller dans "Ajout" puis "Exchange" et renseigez les champs suivants ::
+
+  Adresse : felix.defrance@data.gouv.fr
+  Serveur : mobile.data.gouv.fr
+  Domaine : data.gouv.fr
+
+Si ce n'est pas déjà cocher, activer la prise en charge du SSL dans les "Réglages Avancés". 
+
+C'est fini.
 
 Configuration d'un client CalDAV et CardDAV
 ===========================================
