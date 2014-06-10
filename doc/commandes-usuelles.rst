@@ -81,6 +81,9 @@ Exemple ::
     
     virsh migrate --live api-02 qemu+ssh://root@ns235977/system tcp://192.168.0.2
 
+Tips, pour migrer toute les VM d'un hyperviseur à un autre ::
+
+    for vms in `virsh list | tail -n +3 | awk '{print $2}' | sed '/^[[:space:]]*$/d'` ; do echo $vms; virsh migrate --live $vms qemu+ssh://root@ns235977/system tcp://192.168.0.2; done
 
 rbd
 ---
