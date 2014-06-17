@@ -1,11 +1,21 @@
 =======================
 Manuel de l'utilisateur
 ======================= 
-Comment configurer la messagerie du SGMAP/Etalab. 
+Comment accéder à la messagerie du SGMAP/Etalab. 
 
 ===================================================
 Utilisation via des protocoles standards et ouverts
 ===================================================
+
+Accès au webmail
+================
+Le webmail est un site internet accessible par tous les utilisateurs authentifiés, pour consulter ses mails à distance. Le protocole utilisé est en https, donc sécurisé. 
+
+Muni de vos identifiants, vous pouvez accéder au webmail via l'adresse :
+
+  * http://webmail.data.gouv.fr
+
+Si vous souhaitez utiliser un client lourd, vous pouvez suivre les instructions ci-après.
 
 Configuration d'un client de messagerie via le protocol IMAP
 ============================================================
