@@ -1,18 +1,18 @@
-==========================================
-How to installation d'un server mail Libre 
-==========================================
+===========================================
+How to installation d'un serveur mail Libre 
+===========================================
 
 Préambule
 =========
-Le service Etalab au sein du SGMAP (Secrétariat Général de la Modernisation de l'Action Publique) à décidé de mettre à disposition du publique un certain nombre de documentation relatif à son Système d'Information.
+Le service Etalab au sein du SGMAP (Secrétariat Général de la Modernisation de l'Action Publique) souhaite, dans le cadre de l'opendata, mettre à disposition du publique un certain nombre de documentations relatives à son Système d'Information.
 
-Cette documentation technique à pour but de montrer comment le SGMAP assure son service de messagerie.
+Cette documentation technique à pour but de montrer comment le SGMAP/Etalab assure son service de messagerie de manière autonome.
+
+Les logiciels utilisés sont tous sans exception des Logiciels Libres. Ils assurent les fonctionnalités moderne et nécessaire aux agents d'Etalab en terme de messagerie. (Accès de n'importe où à la messagerie, synchronisation des mails,contacts,agendas avec les smartphones, partage d'agendas,etc..)
 
 Introduction
 ============
-Tous les services présents dans ce document fonctionnent avec un seul serveur virtuel comme hôte d'hébergement. On a nommé ce serveur, "mail".
-
-La distribution Linux utilisé est Debian GNU/Linux dans sa dernière version à l'heure actuelle, Wheezy.
+Tous les services présents dans ce document sont installés sous Linux. La distribution utilisé est Debian GNU/Linux dans sa dernière version à l'heure actuelle, Wheezy.
 
 Les logiciels utilisés pour assurer les fonctionnalités voulu sont les suivants ::
 
@@ -49,9 +49,17 @@ On installe le serveur postfix. ::
 On modifie la configuration par défaut avec les informations relatif à l'infrastructure ::
 
     sed -i 's/inet_interfaces = localhost/inet_interfaces = all/' /etc/postfix/main.cf
-    sed -i 's-mynetworks = 127.0.0.0/8-mynetworks = 127.0.0.0/8 $YOUR_SERVER_IP-' /etc/postfix/main.cf
+    sed -i 's-mynetworks = 127.0.0.0/8-mynetworks = 127.0.0.0/8, [::1], $YOUR_SERVER_IP-' /etc/postfix/main.cf
     sed -i 's/#recipient_delimiter = +/recipient_delimiter = +/' /etc/postfix/main.cf
     echo "relayhost = [smtp.intra.data.gouv.fr]" >> /etc/postfix/main.cf
+
+On ajout un compte de réception pour les mails root ::
+   
+    echo "root: admin@data.gouv.fr" >> /etc/aliases
+
+On compile aliases.db ::
+
+    newaliases
 
 On démarre postfix ::
 
@@ -89,7 +97,7 @@ On restart mysql ::
 
 Certificat SSL
 --------------
-En fonction de votre besoin, il est possible utiliser plusieurs type de certificats. Je décrit ici deux type, les certificats autosigné et les autres.
+En fonction de votre besoin, il est possible utiliser plusieurs type de certificat. J'en décris ici deux types; les certificats autosignés et les certificats validés par une autorité de certifications tièrce et payantes.
 
 Création d'un certificats SSL autosigné
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,17 +112,14 @@ On génère ensuite le certificat autosigné ::
     openssl req -new -x509 -days 3650 -key foobar.key -out foobar.crt
 
 
-Ajout des certificats SSL
-~~~~~~~~~~~~~~~~~~~~~~~~~
-Les certificats d'Etalab sont stockés sur un serveur Git interne. Ils sont signé par une autorité de certification tierce.
-
-::
+Ajout d'un certificat proventant d'une autorité de certification tièrce
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Les certificats d'Etalab sont stockés sur un serveur Git interne. ::
   
-    cd /etc/ssl/private/
+    cd /etc/ssl/private
     git clone git@git.intra.data.gouv.fr:certificates/data.gouv.fr-certificates.git
     git clone git@git.intra.data.gouv.fr:certificates/openfisca.fr-certificates.git
     chmod -R 640 * && chown -R :ssl-cert *
-
 
 
 Service d'administration web des comptes de messagerie (Postfixadmin)
@@ -154,7 +159,7 @@ On active le site ::
 
     a2ensite pfa
 
-On applique quelques optimisations ::
+On applique quelques modifications à la configuration de base ::
 
     sed -i 's/ServerTokens OS/ServerTokens Prod/' /etc/apache2/conf.d/security
     sed -i 's/ServerSignature On/ServerSignature Off/' /etc/apache2/conf.d/security
@@ -171,14 +176,14 @@ On installe le service Postfixadmin ::
 
   apt-get install postfixadmin postfix-mysql
 
-.. note:: On utilisera pas dbconfig pour configurer postfixadmin
+.. note:: On utilise pas dbconfig pour configurer postfixadmin
 
 ::
 
     Web server to reconfigure automatically =>  no
     Configure database for postfixadmin with dbconfig-common? => no
 
-Une fois l'installation faite, on vérifie les prérequis via le setup.phg ::
+Une fois l'installation faite, on vérifie les prérequis via le setup.php ::
 
     https://pfa.data.gouv.fr/setup.php
 
@@ -189,7 +194,7 @@ On configure la base de donnée ::
     mysql> GRANT ALL PRIVILEGES ON 'postfixadmin'.* TO 'postfix'@'localhost' IDENTIFIED BY 'foobar';
 
 
-On configure le fichier de configuration relatif à la base de donnée ::
+On configure le fichier de configuration relatif à la base de donnée:
 
 vi /etc/postfixadmin/dbconfig.inc.php ::
 
@@ -238,6 +243,14 @@ vi /etc/postfix/mysql_virtual_alias_maps.cf ::
       dbname          = postfixadmin
       query           = SELECT goto FROM alias WHERE address='%s' AND active = '1'
 
+vi /etc/postfix/mysql_virtual_alias_domain_maps.cf ::
+
+      user            = postfix
+      password        = **********************
+      hosts           = localhost
+      dbname          = postfixadmin
+      query           = SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('%u', '@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'
+
 
 .. note :: Plus de documentation ici -> /usr/share/doc/postfixadmin/DOCUMENTS/POSTFIX_CONF.txt.gz 
 
@@ -246,19 +259,19 @@ On ajoute la configuration relative aux utilisateurs virtuels de postfix ::
     cat < EOF >> /etc/postfix/main.cf
     # VIRTUAL DOMAIN
     # Aliases
-    virtual_alias_maps = proxy:mysql:$config_directory/mysql_virtual_alias_maps.cf
+    virtual_alias_maps = proxy:mysql:$config_directory/mysql_virtual_alias_maps.cf,proxy:mysql:$config_directory/mysql_virtual_alias_domain_maps.cf
     # Accounts
     virtual_mailbox_domains = proxy:mysql:$config_directory/mysql_virtual_domains_maps.cf
     virtual_mailbox_maps = proxy:mysql:$config_directory/mysql_virtual_mailbox_maps.cf
     EOF
 
-.. note:: A ce stade, il est possible de créer des utilisateurs, mais leurs boite mail ne seront pas fonctionnelles. Il faut un service capable de stocker les mails. 
+.. note:: A ce stade, il est possible de créer des utilisateurs, mais leurs boites mail ne seront pas fonctionnelles. Il faut maintenant un service capable de stocker les mails. 
 
 
 Service de gestion des boites mails (Dovecot)
 ---------------------------------------------
 
-Le service dovecot va assurer l'interface entre la base de mail au format MailDir et les clients de messagerie des utilisateurs finaux. Le protocol servi pour ce faire sera uniquement l'IMAPS.
+Le service dovecot va assurer l'interface entre la base de mail au format MailDir et les clients de messagerie des utilisateurs finaux. Le protocol servi pour ce faire, sera uniquement l'IMAPS.
 
 En association avec managesieve, dovecot permettra également aux utilisateur de gérer des filtres de message.
 
@@ -346,7 +359,6 @@ vi /etc/dovecot/conf.d/10-auth.conf ::
     !include auth-sql.conf.ext
 
 
-
 On renseigne les informations concernant les certificats ssl à utiliser dans le fichier **10-ssl.conf**.
 
 vi /etc/dovecot/conf.d/10-ssl.conf ::
@@ -386,7 +398,7 @@ On donne les droits de lecture à dovecot sur la base de données de postfixadmi
     GRANT SELECT ON postfixadmin.mailbox TO 'dovecot'@'localhost' IDENTIFIED BY 'foobar_password';
     FLUSH PRIVILEGES;
 
-Verification ::
+Vérification ::
 
     mysql -udovecot -p
 
@@ -514,6 +526,8 @@ La gestion de l'authentification des utilisateurs est déléguée à dovecot. On
 
 vi /etc/dovecot/conf.d/10-master.conf ::
 
+  service auth {
+
   # Postfix smtp-auth
   unix_listener /var/spool/postfix/private/auth {
     mode = 0666
@@ -530,4 +544,330 @@ On relance les services postfix et dovecot ::
     service postfix restart ; service dovecot restart
 
 
+Autoconfiguration des clients lourds
+------------------------------------
+Le clients de messagerie que nous recommandons d'utiliser est Mozilla Thunderbird ou son dérivé pour Debian, IceDove. 
+Afin de facilité la configuration de thunderbird pour les utilisateurs finaux, On définit un fichier d'autoconfiguration. Celui-ci sera mis à disponibilité du monde via apache2.
 
+On définit un virtual host pour l'autofiguration.
+
+vi /etc/apache2/sites-available/autoconfig.data.gouv.fr ::
+
+    <VirtualHost *:80>
+    ServerName autoconfig.data.gouv.fr
+    DocumentRoot /var/www/autoconfig/public_html
+
+        <Location />
+                AddDefaultCharset UTF-8
+                php_value magic_quotes_gpc off
+                php_value register_globals off
+        </Location>
+
+    RedirectMatch ^/$ http://sorry.data.gouv.fr
+
+
+    ErrorLog  /var/log/apache2/autoconfig.data.gouv.fr.error.log
+    CustomLog /var/log/apache2/autoconfig.data.gouv.fr.access.log combined
+    </VirtualHost>
+
+On active le site ::
+
+    a2ensite autoconfig.data.gouv.fr
+
+On crée le fichier d'autoconfiguration avec les informations suivantes. ::
+
+    mkdir -p /var/www/autoconfig/public_html/mail
+
+vi /var/www/autoconfig/public_html/mail/config-v1.1.xml ::
+
+    <clientConfig version="1.1">
+      <emailProvider id="data.gouv.fr">
+        <domain>data.gouv.fr</domain>
+        <displayName>data.gouv.fr - %EMAILLOCALPART%</displayName>
+        <displayShortName>Datagouvfr</displayShortName>
+        <incomingServer type="imap">
+          <hostname>imap.data.gouv.fr</hostname>
+          <port>993</port>
+          <socketType>SSL</socketType>
+          <username>%EMAILADDRESS%</username>
+          <authentication>password-cleartext</authentication>
+        </incomingServer>
+        <outgoingServer type="smtp">
+          <hostname>smtp.data.gouv.fr</hostname>
+          <port>587</port>
+          <socketType>STARTTLS</socketType>
+          <authentication>password-cleartext</authentication>
+          <username>%EMAILADDRESS%</username>
+        </outgoingServer>
+      </emailProvider>
+    </clientConfig>
+
+.. note :: Plus d'information https://developer.mozilla.org/en-US/docs/Mozilla/Thunderbird/Autoconfiguration/FileFormat/HowT
+
+
+Vérification de fonctionnement des services installés à ce stade
+================================================================
+
+Connexion à IMAPS
+-----------------
+On se connecte en imaps via netcat ::
+
+  openssl s_client -connect imap.data.gouv.fr:993
+
+  * OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE AUTH=PLAIN AUTH=LOGIN] Dovecot ready.
+
+  __a login felix@data.gouv.fr foobar_password
+
+  __a OK [CAPABILITY IMAP4rev1 LITERAL+ SASL-IR LOGIN-REFERRALS ID ENABLE IDLE SORT SORT=DISPLAY THREAD=REFERENCES THREAD=REFS MULTIAPPEND UNSELECT CHILDREN NAMESPACE UIDPLUS LIST-EXTENDED I18NLEVEL=1 CONDSTORE QRESYNC ESEARCH ESORT SEARCHRES WITHIN CONTEXT=SEARCH LIST-STATUS SPECIAL-USE] Logged in
+
+  __a list "" *__
+  __a OK List completed.
+  __a logout
+
+Augmenter la verbosité de dovecot 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+vi /etc/dovecot/conf.d/10-logging.conf ::
+
+   Check around  ## Logging verbosity and debugging. ;)
+
+
+Troubleshot
+~~~~~~~~~~~
+
+Erreur corrigée en executant : newaliases ::
+
+  Jun 17 11:59:50 mail postfix/local[25585]: warning: hash:/etc/aliases is unavailable. open database /etc/aliases.db: No such file or directory
+
+Erreur corrigée en supprimant la résolution dns sur ipv6 dans postfix ::
+
+    mynetworks = 127.0.0.0/8, [::1], $IP1, $IP2.. 
+
+    Jun 17 12:15:53 mail postfix/smtpd[25692]: warning: hostname localhost does not resolve to address ::1: No address associated with hostname
+
+Erreur corrigée en modifiant la requete sql de dovecot.
+
+vi /etc/dovecot/dovecot-sql.conf.ext :: 
+
+    10001 AS uid, 8 AS gid 
+    au lieu de 
+    1000 AS uid, 8 AS gid
+
+    Jun 17 18:04:01 mail dovecot: imap(felix@data.gouv.fr): Error: user felix@data.gouv.fr: Initialization failed: Namespace '': mkdir(/srv/vmail/users/felix@data.gouv.fr) failed: Permission denied (euid=1000(<unknown>) egid=8(mail) missing +w perm: /srv/vmail/users, dir owned by 10001:8 mode=0755)
+
+
+Envoi de mail via SMTPS
+-----------------------
+::
+    ./smtpt -H mail.data.gouv.fr -f felix@data.gouv.fr -t felix@data.gouv.fr -T -v -p 587 -U felix@data.gouv.fr -P foobar
+
+Vérifier la présence de nouveau mail dans ::
+
+    /srv/vmail/users/felix@data.gouv.fr/new/
+
+
+Troubleshot
+~~~~~~~~~~~
+
+Erreur resolu en permettant à la machine de résoudre son propre nom de domaine fqdn. Pour le savoir on peu executer la commande ::
+
+    hostname -f
+
+    Jun 17 19:03:31 mail postfix/pipe[28998]: BF63F179: to=<felix@data.gouv.fr>, relay=dovecot, delay=2498, delays=2498/0.01/0/0.04, dsn=4.3.0, status=deferred (temporary failure. Command output: lda: Error: user felix@data.gouv.fr: Error reading configuration: Invalid settings: postmaster_address setting not given lda: Fatal: Internal error occurred. Refer to server log for more information. )
+
+Augmenter la verbosité de smtpsubmission
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+::
+
+    submission inet n       -       -       -       -       smtpd -vv
+
+
+Connexion a sieve
+-----------------
+::
+    sieve-connect --nosslverify --user felix@data.gouv.fr  mail.data.gouv.fr -p 4190
+
+
+
+Installation du webmail SOGo
+============================
+Pour l'installation de sogo, nous allons suivre les étapes ci dessous. En plus de sogo lui même, on installera également les dépendances nécessaires.
+
+Ajout du dépôt fourni par l'éditeur Sogo ::
+
+    # Sogo
+    deb http://inverse.ca/debian wheezy wheezy
+    deb http://ftp.fr.debian.org/debian/ wheezy-backports main contrib non-free
+
+    apt-key adv --keyserver hkp://keys.gnupg.net:80 --recv-key 0x810273C4
+
+On met à jour apt et on installe les packages nécessaires ::
+
+    apt-get update
+    apt-get install sogo sope4.9-gdl1-mysql memcached apache2 libapache2-mod-php5
+
+    
+    /usr/share/doc/tmpreaper/README.security.gz
+    sed -i 's/SHOWWARNING=true/SHOWWARNING=false/' /etc/tmpreaper.conf
+
+
+Configuration du webmail sogo
+-----------------------------
+
+On edite le fichier **/etc/sogo/sogo.conf**
+
+::
+
+     /* Database configuration (mysql://) */    
+    SOGoProfileURL = "mysql://bar:foobar@smtp.intra.data.gouv.fr:3306/sogodb/sogo_user_profile";
+    OCSFolderInfoURL = "mysql://bar:foobar@smtp.intra.data.gouv.fr:3306/sogodb/sogo_folder_info";
+    OCSSessionsFolderURL = "mysql://bar:foobar@smtp.intra.data.gouv.fr:3306/sogodb/sogo_sessions_folder";
+
+::
+
+    /* Mail */
+    SOGoDraftsFolderName = INBOX/Drafts;
+    SOGoSentFolderName = INBOX/Sent;
+    SOGoTrashFolderName = INBOX/Trash;
+    SOGoIMAPServer = imap://127.0.0.1:143;
+    SOGoSieveServer = sieve://127.0.0.1:4190;
+    SOGoSMTPServer = smtp.intra.data.gouv.fr;
+    SOGoMailDomain = data.gouv.fr;
+    SOGoForceExternalLoginWithEmail = NO;
+    NGImap4ConnectionStringSeparator = ".";
+
+::
+
+    /* SQL authentication Mysql */
+    SOGoUserSources = (
+        {
+          type = sql;
+          id = postfixadmin;
+          viewURL = "mysql://bar:foobar@smtp.intra.data.gouv.fr:3306/postfixadmin/sogo_users";
+          canAuthenticate = YES;
+          isAddressBook = YES;
+          userPasswordAlgorithm = "md5-crypt";
+          displayName = "SGMAP/Etalab";
+          DomainFieldName = "domain";
+          IMAPLoginFieldName = "c_name";
+          LoginFieldNames = (
+              "c_uid",
+              "c_name"
+          );
+        }
+      );
+
+::
+
+    /* Web Interface */
+    SOGoPageTitle = Webmail-Etalab;
+    SOGoVacationEnabled = YES;
+    SOGoForwardEnabled = YES;
+    SOGoSieveScriptsEnabled = YES;
+    SOGoMailMessageCheck = every_minute;
+    SOGoSieveScriptsEnable = YES;
+
+:: 
+
+    /* General */
+    SOGoLanguage = French;
+    SOGoTimeZone = Europe/Paris;
+    SOGoMemcachedHost = "127.0.0.1";
+    WOPort = 127.0.0.1:20000;
+
+Configuration de sogo pour acceder la db de postfixadmin
+--------------------------------------------------------
+On crée une vue de la base de données de postfixadmin ::
+
+    USE postfixadmin;
+    
+    CREATE VIEW  `sogo_users` AS SELECT local_part AS c_uid, username AS c_name, 
+    PASSWORD AS c_password, name AS c_cn, username AS mail, domain
+    FROM  `mailbox`;
+
+On peut vérifier cette vue avec les requêtes suivantes ::
+
+    SHOW FULL TABLES IN postfixadmin WHERE TABLE_TYPE LIKE 'VIEW';
+    SELECT * FROM sogo_users;
+
+On crée un utilisateur qui sera utilisé par sogo pour acceder à la vue ::
+
+    CREATE USER 'sogo'@'%' IDENTIFIED BY 'fooboar';
+    GRANT SELECT ON postfixadmin.sogo_users TO 'sogo'@'%' IDENTIFIED BY 'foobar_password';
+
+Ensuite pour les besoins de sogo, on a besoin d'une base dédiée, que l'on crée :: 
+
+    CREATE DATABASE `sogo` CHARACTER SET='utf8';
+
+Et on y ajoute tous les droits possible ::
+
+    GRANT ALL PRIVILEGES ON `sogo`.* TO 'sogo'@'%' WITH GRANT OPTION;
+
+Pour finir on reload les permissions globales de mysql ::
+
+    FLUSH PRIVILEGES;
+
+
+Configuration d'apache pour SOGo
+--------------------------------
+
+On active les modules nécessaire au fonctionnement du webmail ::
+
+    a2enmod headers proxy_http proxy rewrite ssl
+
+A des fins d'homogénéité, on lie la configuration du webmail dans /etc/sogo ::
+
+    ln -s /etc/apache2/conf.d/SOgo.conf /etc/sogo/apache.conf
+
+On renseigne les certificats ssl qui seront utilisé par le serveur web ::
+
+    cat < EOF >> /etc/apache2/ssl.conf
+    <IfModule mod_ssl.c>
+        NameVirtualHost *:443
+        SSLCertificateFile /etc/ssl/private/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.crt
+        SSLCertificateKeyFile /etc/ssl/private/data.gouv.fr-certificates/private-key-raw.key
+    </IfModule>
+    EOF
+
+On définit un virtual host pour le webmail SOGo ::
+
+    cat < EOF >> /etc/apache2/sites-available/webmail.data.gouv.fr
+    <VirtualHost *:80>
+        ServerName webmail.data.gouv.fr
+        ServerAlias mail.data.gouv.fr
+        DocumentRoot /var/www
+    
+        RedirectMatch permanent ^(.*)$ https://webmail.data.gouv.fr$1
+
+        ErrorLog  /var/log/apache2/webmail.data.gouv.fr.error.log
+        CustomLog /var/log/apache2/webmail.data.gouv.fr.access.log combined
+    </VirtualHost>
+
+    <VirtualHost *:443>
+        ServerName webmail.data.gouv.fr
+        ServerAlias mail.data.gouv.fr
+        DocumentRoot /var/www
+
+        RedirectMatch ^/$ https://webmail.data.gouv.fr/SOGo
+    
+        SSLEngine on
+    
+        include /etc/sogo/apache.conf
+    
+        ErrorLog  /var/log/apache2/webmail.data.gouv.fr.error-ssl.log
+        CustomLog /var/log/apache2/webmail.data.gouv.fr.access-ssl.log combined
+    </VirtualHost>  
+    EOF
+
+On active le site  ::
+
+    a2ensite webmail.data.gouv.fr
+
+
+Configuration d'activesync
+--------------------------
+::
+     apt-get install sogo-activesync
+
+
+C'est fini. 
