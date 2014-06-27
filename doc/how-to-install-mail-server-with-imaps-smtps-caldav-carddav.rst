@@ -191,7 +191,7 @@ Une fois l'installation faite, on vérifie les prérequis via le setup.php ::
 On configure la base de donnée ::
 
     mysql> CREATE DATABASE 'postfixadmin' CHARACTER SET='utf8';
-    mysql> GRANT ALL PRIVILEGES ON 'postfixadmin'.* TO 'postfix'@'localhost' IDENTIFIED BY 'foobar';
+    mysql> GRANT ALL PRIVILEGES ON `postfixadmin`.* TO 'postfix'@'localhost' IDENTIFIED BY 'foobar';
 
 
 On configure le fichier de configuration relatif à la base de donnée:
@@ -826,6 +826,7 @@ On renseigne les certificats ssl qui seront utilisé par le serveur web ::
         NameVirtualHost *:443
         SSLCertificateFile /etc/ssl/private/data.gouv.fr-certificates/wildcard.data.gouv.fr-certificate.crt
         SSLCertificateKeyFile /etc/ssl/private/data.gouv.fr-certificates/private-key-raw.key
+        SSLCertificateChainFile /etc/ssl/private/data.gouv.fr-certificates/ca-wildcard-certificate-chain.crt
     </IfModule>
     EOF
 
@@ -869,5 +870,42 @@ Configuration d'activesync
 ::
      apt-get install sogo-activesync
 
+Configuration des backups des utilisateurs sogo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Afin de suavegarder les données de profile de chaque utilisateur, on doit suavegarder les utilisateurs sogo via un outil dédié.
+
+On définit l'emplacement des sauvegardes
+:: 
+
+    mkdir /var/backups/sogo
+    chown sogo: /var/backups/sogo
+
+On définit une fréquence de sauvegarde
+vi /etc/cron.d/sogo-backup ::
+
+    23 23 * * * sogo /usr/local/bin/sogo-backup    
+
+On crée le script de sauvegarde suivant :
+vi /usr/local/bin/sogo-backup ::
+
+    #!/bin/bash
+    VALID_USER=sogo
+    BACKUP_DIR=/var/backups/sogo
+    NB_DAY_RETENTION=15
+    USER=$( getent passwd $( id -u ) |cut -d':' -f 1 )  
+    [ "$USER" != "$VALID_USER" ] && echo "This script must be run by user $VALID_USER (current : $USER)" && exit 1
+    DATE=$( date +%Y%m%d-%Hh%M )
+    DIR=$BACKUP_DIR/$DATE
+    LOG=$DIR/backup.log
+    [ ! -d "$DIR" ] && mkdir "$DIR"
+    /usr/sbin/sogo-tool backup "$DIR" ALL > $LOG 2>&1
+    find $BACKUP_DIR/* -type d -ctime +$NB_DAY_RETENTION -exec rm -fr \(\) \;
+    cat $LOG|grep -v "Cache cleanup interval set every"|grep -v "Using host(s)"
+
+On applique les droits nécessaires :
+::
+
+    chown sogo: /usr/local/bin/sogo-backup
+    chmod a+x /usr/local/bin/sogo-backup
 
 C'est fini. 
