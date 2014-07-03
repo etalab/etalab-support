@@ -85,20 +85,26 @@ De la même manière, on procède pour le calendrier ::
 	https://webmail.data.gouv.fr/SOGo/dav/felix.defrance/Calendar/personal/
 
 
-Android (caldav sync adapter)
------------------------------
-Ces protocols sont accessible via l'application caldavsyncadapter. 
+Synchronisation des contacts et calendrier sous Android
+-------------------------------------------------------
 
-L'outil est téléchargeable depuis googleplay ou F-droid. ::
+L'application DAVdroid, permet de synchroniser les contacts ainsi que les calendriers.
 
-  https://f-droid.org/repository/browse/?fdfilter=caldav&fdid=org.gege.caldavsyncadapter
+Configuration de DAVdroid
+~~~~~~~~~~~~~~~~~~~~~~~~~
+L'outil est téléchargeable depuis googleplay ou F-droid.
 
-ou ::
+   * https://f-droid.org/repository/browse/?fdfilter=davdroid&fdid=at.bitfire.davdroid
+   * https://play.google.com/store/apps/details?id=at.bitfire.davdroid&hl=fr
 
-  https://play.google.com/store/apps/details?id=org.gege.caldavsyncadapter&hl=fr
+On lance Davdroid puis on clique sur l'icone de la clé avec un "+", on selectionne DAVdroid en on renseigne comme il suit ::
 
+    https:// webmail.data.gouv.fr/SOGo/dav
+    Utilisateur : felix.defrance
+    Mot de passe  : **********
 
-Les paramètres de configuration sont les mêmes que pour le client Thunderbird. 
+Et on décoche l'authentification par "Digest".
+
 
 Apple iCal
 ----------
