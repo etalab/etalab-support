@@ -13,7 +13,7 @@ Le webmail est un site internet accessible par tous les utilisateurs authentifi�
 
 Muni de vos identifiants, vous pouvez accéder au webmail via l'adresse :
 
-  * http://webmail.data.gouv.fr
+  * https://webmail.data.gouv.fr
 
 Si vous souhaitez utiliser un client lourd, vous pouvez suivre les instructions ci-après.
 
@@ -58,22 +58,31 @@ Configuration d'un client CalDAV et CardDAV
 
 ThunderBird / Icedove
 ---------------------
+
+Pour permettre les fonctionnalités de calendrier et contact avec thunderbird, il faut installer le plugin SOGO conntector disponible ici :
+
+  * http://www.sogo.nu/downloads/frontends.html
+
+Une fois le plugin installé et thunderbird relancé, on configure le carnet d'adresse
+
+.. note: Veuilliez prêter une attention particulière l'url d'accès ou vous devez changer felix.defrance par votre prenom.nom. 
+
 ::
 
 	Choose Go > Address Book.
 	Choose File > New > Remote Address Book.
 	Enter a signifcant name for your calendar in the Name feld.
 	Type the following URL in the URL feld:
-	http://webmail.data.gouv.fr/SOGo/dav/felix.defrance/Contacts/personal/
+	https://webmail.data.gouv.fr/SOGo/dav/felix.defrance/Contacts/personal/
 
-::
+De la même manière, on procède pour le calendrier ::
 	
 	Choose Go > Calendar.
 	Choose Calendar > New Calendar.
 	Select On the Network and click on Continue.
 	Select CalDAV.
 	Type the following URL in the URL feld:
-	http://webmail.data.gouv.fr/SOGo/dav/felix.defrance/Calendar/personal/
+	https://webmail.data.gouv.fr/SOGo/dav/felix.defrance/Calendar/personal/
 
 
 Android (caldav sync adapter)
@@ -95,7 +104,7 @@ Apple iCal
 ----------
 L'url du serveur est le suivant ::
   
-  http://webmail.data.gouv.fr/SOGo/dav/felix.defrance/
+  https://webmail.data.gouv.fr/SOGo/dav/felix.defrance/
 
 
 ======================================
