@@ -130,7 +130,7 @@ L'outil est téléchargeable depuis googleplay ou F-droid.
    * https://f-droid.org/repository/browse/?fdfilter=davdroid&fdid=at.bitfire.davdroid
    * https://play.google.com/store/apps/details?id=at.bitfire.davdroid&hl=fr
 
-On lance Davdroid puis on clique sur l'icone de la clé avec un "+", on selectionne DAVdroid en on renseigne comme il suit ::
+On lance Davdroid puis on clique sur l'icone de la clé avec un "+", on selectionne DAVdroid et on renseigne comme il suit ::
 
     https:// webmail.data.gouv.fr/SOGo/dav
     Utilisateur : felix.defrance@data.gouv.fr (Ajustez à votre mail)
