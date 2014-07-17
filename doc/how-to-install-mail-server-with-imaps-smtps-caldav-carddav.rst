@@ -4,20 +4,20 @@ How to installation d'un serveur mail Libre
 
 Préambule
 =========
-Le service Etalab au sein du SGMAP (Secrétariat Général de la Modernisation de l'Action Publique) souhaite, dans le cadre de l'opendata, mettre à disposition du publique un certain nombre de documentations relatives à son Système d'Information.
+Le service Etalab au sein du SGMAP (Secrétariat Général de la Modernisation de l'Action Publique) souhaite, dans le cadre de l'opendata, mettre à disposition du public un certain nombre de documentations relatives à son Système d'Information.
 
-Cette documentation technique à pour but de montrer comment le SGMAP/Etalab assure son service de messagerie de manière autonome.
+Cette documentation technique a pour but de montrer comment le SGMAP/Etalab assure son service de messagerie de manière autonome.
 
-Les logiciels utilisés sont tous sans exception des Logiciels Libres. Ils assurent les fonctionnalités moderne et nécessaire aux agents d'Etalab en terme de messagerie. (Accès de n'importe où à la messagerie, synchronisation des mails,contacts,agendas avec les smartphones, partage d'agendas,etc..)
+Les logiciels utilisés sont tous sans exception des Logiciels Libres. Ils assurent les fonctionnalités modernes et nécessaires aux agents d'Etalab en termes de messagerie. (Accès de n'importe où à la messagerie, synchronisation des mails,contacts,agendas avec les smartphones, partage d'agendas,etc..)
 
 Introduction
 ============
-Tous les services présents dans ce document sont installés sous Linux. La distribution utilisé est Debian GNU/Linux dans sa dernière version à l'heure actuelle, Wheezy.
+Tous les services présents dans ce document sont installés sous Linux. La distribution utilisée est Debian GNU/Linux dans sa dernière version à l'heure actuelle, Wheezy.
 
-Les logiciels utilisés pour assurer les fonctionnalités voulu sont les suivants ::
+Les logiciels utilisés pour assurer les fonctionnalités voulues sont les suivants ::
 
     * Postfix : Pour assurer l'envoi, la réception et le routage des mails (Protocols : Smtp et Smtps)
-    * Mysql   : Pour unifier les comptes des utilisateur de la plateforme dans une base de donnée SQL.
+    * Mysql   : Pour unifier les comptes des utilisateurs de la plateforme dans une base de données SQL.
     * Postfixadmin : Pour assurer une administration simplifiée des comptes utilisateurs. (Protocol : Https)
     * Dovecot : Pour assurer l'accès aux boites mails par les clients finaux (Protocol : Imaps)
     * SOGo    : Pour assurer un accès par webmail pour les clients finaux (Protocol: Https)
@@ -37,23 +37,23 @@ Service d'envoi/réception (Postfix)
 
 Le serveur postfix va assurer les fonctions suivantes :
 
-    - Envoi du courier pour les services présents sur ce serveur,
+    - Envoi du courrier pour les services présents sur ce serveur,
     - Réception des emails des utilisateurs,
-    - Envoi du courier pour les utilisateur authentifiés,
+    - Envoi du courrier pour les utilisateurs authentifiés,
     - Authentifier les utilisateurs avec SASL via Dovecot,
 
 On installe le serveur postfix. ::
 
     apt-get install postfix
 
-On modifie la configuration par défaut avec les informations relatif à l'infrastructure ::
+On modifie la configuration par défaut avec les informations relatives à l'infrastructure ::
 
     sed -i 's/inet_interfaces = localhost/inet_interfaces = all/' /etc/postfix/main.cf
     sed -i 's-mynetworks = 127.0.0.0/8-mynetworks = 127.0.0.0/8, [::1], $YOUR_SERVER_IP-' /etc/postfix/main.cf
     sed -i 's/#recipient_delimiter = +/recipient_delimiter = +/' /etc/postfix/main.cf
     echo "relayhost = [smtp.intra.data.gouv.fr]" >> /etc/postfix/main.cf
 
-On ajout un compte de réception pour les mails root ::
+On ajoute un compte de réception pour les mails root ::
    
     echo "root: admin@data.gouv.fr" >> /etc/aliases
 
@@ -67,7 +67,7 @@ On démarre postfix ::
 
 .. note:: A ce stade vous pouvez, depuis le serveur, envoyer des mails vers l'extérieur.
 
-Service de base de donnée (Mysql)
+Service de base de données (Mysql)
 ---------------------------------
 
 Mysql va nous permettre d'héberger une base de données contenant les utilisateurs virtuels.
@@ -78,13 +78,13 @@ On installe le serveur Mysql ::
 
   apt-get install mysql-server
 
-On défini le fichier  **/root/.my.cnf** avec ::
+On définit le fichier  **/root/.my.cnf** avec ::
     
     [mysql]
     user=root
     password=FOO_PASSWORD
 
-Dans le soucis d'un mimimum d'optimisation, On définit l'option suivante dans la configuration de mysql. ::
+Dans le souci d'un mimimum d'optimisation, on définit l'option suivante dans la configuration de mysql. ::
 
   echo "innodb_file_per_table = 1" >> /etc/mysql/my.cnf
 
@@ -97,12 +97,12 @@ On restart mysql ::
 
 Certificat SSL
 --------------
-En fonction de votre besoin, il est possible utiliser plusieurs type de certificat. J'en décris ici deux types; les certificats autosignés et les certificats validés par une autorité de certifications tièrce et payantes.
+En fonction de votre besoin, il est possible d'utiliser plusieurs types de certificats. J'en décris ici deux types; les certificats autosignés et les certificats validés par une autorité de certifications tierce et payante.
 
 Création d'un certificats SSL autosigné
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On créer une pair de clé au format RSA ::
+On créé une paire de clés au format RSA ::
     
     cd /etc/ssl/private/certificates/foobar.fr
     openssl genrsa -out foobar.key 2048
@@ -112,7 +112,7 @@ On génère ensuite le certificat autosigné ::
     openssl req -new -x509 -days 3650 -key foobar.key -out foobar.crt
 
 
-Ajout d'un certificat proventant d'une autorité de certification tièrce
+Ajout d'un certificat proventant d'une autorité de certification tierce
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Les certificats d'Etalab sont stockés sur un serveur Git interne. ::
   
@@ -126,13 +126,13 @@ Service d'administration web des comptes de messagerie (Postfixadmin)
 ---------------------------------------------------------------------
 Installation d'apache2 
 ~~~~~~~~~~~~~~~~~~~~~~
-Un serveur web est nécessaire pour l'interface de postfixadmin
+Un serveur web est nécessaire pour l'interface de postfixadmin.
 
 On installe apache ::
     
     apt-get install apache2
 
-On active les modules nécessaire ::
+On active les modules nécessaires ::
 
     a2enmod rewrite
 
@@ -176,7 +176,7 @@ On installe le service Postfixadmin ::
 
   apt-get install postfixadmin postfix-mysql
 
-.. note:: On utilise pas dbconfig pour configurer postfixadmin
+.. note:: On n'utilise pas dbconfig pour configurer postfixadmin
 
 ::
 
@@ -188,13 +188,13 @@ Une fois l'installation faite, on vérifie les prérequis via le setup.php ::
     https://pfa.data.gouv.fr/setup.php
 
 
-On configure la base de donnée ::
+On configure la base de données ::
 
     mysql> CREATE DATABASE 'postfixadmin' CHARACTER SET='utf8';
     mysql> GRANT ALL PRIVILEGES ON `postfixadmin`.* TO 'postfix'@'localhost' IDENTIFIED BY 'foobar';
 
 
-On configure le fichier de configuration relatif à la base de donnée:
+On configure le fichier de configuration relatif à la base de données:
 
 vi /etc/postfixadmin/dbconfig.inc.php ::
 
@@ -207,7 +207,7 @@ vi /etc/postfixadmin/dbconfig.inc.php ::
     $dbtype='mysqli';
 
 
-On créer la base de donnée via le setup.php ::
+On créé la base de données via le setup.php ::
 
     https://pfa.data.gouv.fr/setup.php
 
@@ -271,12 +271,11 @@ On ajoute la configuration relative aux utilisateurs virtuels de postfix ::
 Service de gestion des boites mails (Dovecot)
 ---------------------------------------------
 
-Le service dovecot va assurer l'interface entre la base de mail au format MailDir et les clients de messagerie des utilisateurs finaux. Le protocol servi pour ce faire, sera uniquement l'IMAPS.
+Le service dovecot va assurer l'interface entre la base de mails au format MailDir et les clients de messagerie des utilisateurs finaux. Le protocole servi pour ce faire, sera uniquement l'IMAPS.
 
-En association avec managesieve, dovecot permettra également aux utilisateur de gérer des filtres de message.
+En association avec managesieve, dovecot permettra également aux utilisateurs de gérer des filtres de messages.
 
-L'authentification des utilisateurs se fait sur la base de donnée Mysql.
-
+L'authentification des utilisateurs se fait sur la base de données Mysql.
 
 Installation de dovecot et des services associés
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -333,7 +332,7 @@ vi /etc/dovecot/conf.d/10-master.conf ::
 
 
 
-On définit les parametres relatifs à la configuration des fichiers stockant les boites mails. Leurs emplacements, leurs types. Pour ce faire on edite le fichier **10-mail.conf**
+On définit les paramètres relatifs à la configuration des fichiers stockant les boites mails. Leurs emplacements, leurs types. Pour ce faire, on edite le fichier **10-mail.conf**
 
 vi /etc/dovecot/conf.d/10-mail.conf ::
 
@@ -425,7 +424,7 @@ On route les mails vers dovecot afin qu'ils soient stockés ::
 Configuration du service de filtre (ManageSieve)
 ................................................
 
-Le service de filtre est nécessaire pour gérer, par exemple, les mails d'autoréponses que sogo va générer dans le cas d'une période de vacances pour l'utilisateur.
+Le service de filtre est nécessaire pour gérer, par exemple, les mails d'auto-réponses que sogo va générer dans le cas d'une période de vacances pour l'utilisateur.
 
 On active donc sieve via les fichiers suivants :
 
@@ -472,11 +471,11 @@ On redemarre le service dovecot ::
 Service d'envoi de mail authentifié (SMTPS)
 -------------------------------------------
 
-SASL va être utilisé pour authentifier les utilisateurs de notre organisation, afin que seulement ceux-ci puissent envoyer des emails par le biai de notre serveur de mail.
+SASL va être utilisé pour authentifier les utilisateurs de notre organisation, afin que seulement ceux-ci puissent envoyer des emails par le biais de notre serveur de mails.
 
 Les fonctionnalités SASL vont être activées uniquement sur le port submission(587) prévu par la rfc6409.
 
-En outre, nous avons choisi d'authentifier nos utilisateurs via dovecot qui lui même s'apuit sur la base mysql comme base de donnée utilisateur. Cette réalisation est trivial et évite les multiples configuration de mysql en backend des serivces postfix & co.
+En outre, nous avons choisi d'authentifier nos utilisateurs via dovecot qui lui même s'appuie sur la base mysql comme base de données utilisateur. Cette réalisation est triviale et évite les multiples configurations de mysql en backend des services postfix & co.
 
 On configure les fonctionnalités SASL de postfix.
 
@@ -520,9 +519,9 @@ vi /etc/postfix/main.cf ::
 Délégation à dovecot
 ~~~~~~~~~~~~~~~~~~~~
 
-La gestion de l'authentification des utilisateurs est déléguée à dovecot. On active une socket unix sur le serveur dovecot pour que postfix puisse l'intérroger.
+La gestion de l'authentification des utilisateurs est déléguée à dovecot. On active une socket unix sur le serveur dovecot pour que postfix puisse l'interroger.
 
-.. warning :: Les paramètres de configuration suivant, sont liés au serveur dovecot. Néanmoins, dans un soucis de compréhension, ils sont définis à cette endroit de la documentation. 
+.. warning :: Les paramètres de configuration suivants sont liés au serveur dovecot. Néanmoins, dans un souci de compréhension, ils sont définis à cet endroit de la documentation. 
 
 vi /etc/dovecot/conf.d/10-master.conf ::
 
@@ -546,8 +545,8 @@ On relance les services postfix et dovecot ::
 
 Autoconfiguration des clients lourds
 ------------------------------------
-Le clients de messagerie que nous recommandons d'utiliser est Mozilla Thunderbird ou son dérivé pour Debian, IceDove. 
-Afin de facilité la configuration de thunderbird pour les utilisateurs finaux, On définit un fichier d'autoconfiguration. Celui-ci sera mis à disponibilité du monde via apache2.
+Le client de messagerie que nous recommandons d'utiliser est Mozilla Thunderbird ou son dérivé pour Debian, IceDove. 
+Afin de faciliter la configuration de thunderbird pour les utilisateurs finaux, on définit un fichier d'autoconfiguration. Celui-ci sera mis à disponibilité du monde via apache2.
 
 On définit un virtual host pour l'autofiguration.
 
@@ -635,7 +634,7 @@ vi /etc/dovecot/conf.d/10-logging.conf ::
 Troubleshot
 ~~~~~~~~~~~
 
-Erreur corrigée en executant : newaliases ::
+Erreur corrigée en exécutant : newaliases ::
 
   Jun 17 11:59:50 mail postfix/local[25585]: warning: hash:/etc/aliases is unavailable. open database /etc/aliases.db: No such file or directory
 
@@ -645,7 +644,7 @@ Erreur corrigée en supprimant la résolution dns sur ipv6 dans postfix ::
 
     Jun 17 12:15:53 mail postfix/smtpd[25692]: warning: hostname localhost does not resolve to address ::1: No address associated with hostname
 
-Erreur corrigée en modifiant la requete sql de dovecot.
+Erreur corrigée en modifiant la requête sql de dovecot.
 
 vi /etc/dovecot/dovecot-sql.conf.ext :: 
 
@@ -669,7 +668,7 @@ Vérifier la présence de nouveau mail dans ::
 Troubleshot
 ~~~~~~~~~~~
 
-Erreur resolu en permettant à la machine de résoudre son propre nom de domaine fqdn. Pour le savoir on peu executer la commande ::
+Erreur résolue en permettant à la machine de résoudre son propre nom de domaine fqdn. Pour le savoir on peut exécuter la commande ::
 
     hostname -f
 
@@ -691,7 +690,7 @@ Connexion a sieve
 
 Installation du webmail SOGo
 ============================
-Pour l'installation de sogo, nous allons suivre les étapes ci dessous. En plus de sogo lui même, on installera également les dépendances nécessaires.
+Pour l'installation de sogo, nous allons suivre les étapes ci-dessous. En plus de sogo lui-même, on installera également les dépendances nécessaires.
 
 Ajout du dépôt fourni par l'éditeur Sogo ::
 
@@ -714,7 +713,7 @@ On met à jour apt et on installe les packages nécessaires ::
 Configuration du webmail sogo
 -----------------------------
 
-On edite le fichier **/etc/sogo/sogo.conf**
+On édite le fichier **/etc/sogo/sogo.conf**
 
 ::
 
@@ -775,8 +774,8 @@ On edite le fichier **/etc/sogo/sogo.conf**
     SOGoMemcachedHost = "127.0.0.1";
     WOPort = 127.0.0.1:20000;
 
-Configuration de sogo pour acceder la db de postfixadmin
---------------------------------------------------------
+Configuration de sogo pour accéder à la db de postfixadmin
+----------------------------------------------------------
 On crée une vue de la base de données de postfixadmin ::
 
     USE postfixadmin;
@@ -790,7 +789,7 @@ On peut vérifier cette vue avec les requêtes suivantes ::
     SHOW FULL TABLES IN postfixadmin WHERE TABLE_TYPE LIKE 'VIEW';
     SELECT * FROM sogo_users;
 
-On crée un utilisateur qui sera utilisé par sogo pour acceder à la vue ::
+On crée un utilisateur qui sera utilisé par sogo pour accéder à la vue ::
 
     CREATE USER 'sogo'@'%' IDENTIFIED BY 'fooboar';
     GRANT SELECT ON postfixadmin.sogo_users TO 'sogo'@'%' IDENTIFIED BY 'foobar_password';
@@ -799,7 +798,7 @@ Ensuite pour les besoins de sogo, on a besoin d'une base dédiée, que l'on cré
 
     CREATE DATABASE `sogo` CHARACTER SET='utf8';
 
-Et on y ajoute tous les droits possible ::
+Et on y ajoute tous les droits possibles ::
 
     GRANT ALL PRIVILEGES ON `sogo`.* TO 'sogo'@'%' WITH GRANT OPTION;
 
@@ -811,7 +810,7 @@ Pour finir on reload les permissions globales de mysql ::
 Configuration d'apache pour SOGo
 --------------------------------
 
-On active les modules nécessaire au fonctionnement du webmail ::
+On active les modules nécessaires au fonctionnement du webmail ::
 
     a2enmod headers proxy_http proxy rewrite ssl
 
@@ -819,7 +818,7 @@ A des fins d'homogénéité, on lie la configuration du webmail dans /etc/sogo :
 
     ln -s /etc/apache2/conf.d/SOgo.conf /etc/sogo/apache.conf
 
-On renseigne les certificats ssl qui seront utilisé par le serveur web ::
+On renseigne les certificats ssl qui seront utilisés par le serveur web ::
 
     cat < EOF >> /etc/apache2/ssl.conf
     <IfModule mod_ssl.c>
@@ -872,7 +871,7 @@ Configuration d'activesync
 
 Configuration des backups des utilisateurs sogo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Afin de suavegarder les données de profile de chaque utilisateur, on doit suavegarder les utilisateurs sogo via un outil dédié.
+Afin de sauvegarder les données de profil de chaque utilisateur, on doit sauvegarder les utilisateurs sogo via un outil dédié.
 
 On définit l'emplacement des sauvegardes
 :: 
