@@ -13,7 +13,7 @@ A chaque manipulation, ses commandes spécifiques.
 
 qemu-img
 --------
-Commandes pour créer des images virtuelles de machines. Dans cette exemple on crée une image au format "rbd" ::
+Commandes pour créer des images virtuelles de machines. Dans cette exemple on crée une image au format **rbd** ::
 
   qemu-img create -f rbd rbd:[pool]/[nom-vm] [taille] 
 
