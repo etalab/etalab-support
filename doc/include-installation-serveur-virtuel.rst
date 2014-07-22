@@ -97,7 +97,7 @@ Déclaration dans libvirt
 ************************
 De la même manière sur chaque hyperviseur, on exécute la commande suivante pour déclarer la nouvelle vm à libvirt. ::
     
-    virsh define /etc/libvirt/qemu/<nom vm>.xml
+    virsh define etc/libvirt/qemu/<nom vm>.xml
 
 Pour vérifier les informations qu'a libvirt sur les vm, on peux exécuter ::
 
