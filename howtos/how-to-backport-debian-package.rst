@@ -35,12 +35,12 @@ On configure apt dans /etc/apt/source.list, tel que ::
 
     ## Wheezy
     deb http://ftp.fr.debian.org/debian wheezy main
-	deb-src http://ftp.fr.debian.org/debian wheezy main
-	# wheezy-backports 
-	deb http://ftp.fr.debian.org/debian wheezy-backports  main contrib non-free
-	## Jessie
-	#deb http://ftp.fr.debian.org/debian jessie main
-	deb-src http://ftp.fr.debian.org/debian jessie main
+    deb-src http://ftp.fr.debian.org/debian wheezy main
+    # wheezy-backports 
+    deb http://ftp.fr.debian.org/debian wheezy-backports  main contrib non-free
+    ## Jessie
+    #deb http://ftp.fr.debian.org/debian jessie main
+    deb-src http://ftp.fr.debian.org/debian jessie main
 
 On update le tout ::
 

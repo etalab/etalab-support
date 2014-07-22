@@ -1,86 +1,5 @@
-*********************************
-Installation de base d'un serveur
-*********************************
 
 Installation d'un parefeu et de différents services de sécurité, sauvegarde et supervision sur un serveur.
-
-
-Installation de Fail2ban
-========================
-
-::
-
-  apt-get install fail2ban
-
-Le check SSH est activé par défaut avec un ban au bout de 6 erreurs. Ceci peut-être modifié en éditant le fichier */etc/fail2ban/jail.conf* et en modifiant le paramètre *maxretry* de la section *[ssh]*.
-
-Pour faire en sorte que certaine IP ne soit jamais bannies, il faut éditer le paramètre *ignoreip* de la section *[DEFAULT]*. Ce paramètre liste les adresses IP qui ne seront jamais bannies (liste séparée par des espaces).
-
-Etant donné que Fail2ban utilise des règles Netfilter pour bloquer les IP bannies et que nous mettons par ailleurs en place un pare-feu à base de règles Netfilter également, le service Fail2ban ne sera pas démarrer directement mais le sera via le script packetfilter qui manipulera également nos règles de pare-feu. Nous allons donc désactiver le lancement automatique de Fail2ban et faire en sorte que celui-ci ne soit pas réactiver en cas de mise à jour du paquet Debian ::
-
-  insserv -r -f fail2ban
-  echo "#! /bin/sh
-  ### BEGIN INIT INFO
-  # Provides:          fail2ban
-  # Required-Start:    $local_fs $remote_fs
-  # Required-Stop:     $local_fs $remote_fs
-  # Should-Start:      $time $network $syslog iptables firehol shorewall ipmasq arno-iptables-firewall
-  # Should-Stop:       $network $syslog iptables firehol shorewall ipmasq arno-iptables-firewall
-  # Default-Start:
-  # Default-Stop:      0 1 2 3 4 5 6
-  # Short-Description: Start/stop fail2ban
-  # Description:       Start/stop fail2ban, a daemon scanning the log files and
-  #                    banning potential attackers.
-  ### END INIT INFO" > /etc/insserv/overrides/fail2ban
-  insserv fail2ban
-
-
-Installation du pare-feu
-========================
-
-Mettre en place les fichiers suivant (commun à tout les hyperviseurs) :
-
-- **packetfilter** dans */etc/init.d/*
-- **etalab.conf** dans */etc/*
-
-**Remarque :** les droits de ces fichiers doivent être *0750*.
-
-Il faut ensuite activer le service au démarrage ::
-
-  insserv packetfilter
-
-
-Arrêt/démarrage du parefeu
---------------------------
-
-Démarrage ::
-
-  service packetfilter start
-
-Arrêt ::
-
-  service packetfilter stop
-
-Statut ::
-
-  service packetfilter status
-
-
-Installation d'agents de supervision, de métrologie et de sauvegarde
-====================================================================
-
-
-Installation de l'agent de sauvegarde
--------------------------------------
-
-Installer le paquet *rsync* si il n'est pas déjà installé
-
-Mettre en place le script **rrsync** dans **/usr/local/sbin/**. Il doit avoir les droits **0755**.
-
-Ajouter la clé SSH du serveur de backup dans le fichier **/etc/ssh/authorized_keys/root** ::
-
-  echo 'from="88.190.30.41",command="/usr/local/sbin/rrsync -ro /" ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD7QrsYt+SbpyVLsps9cStQfVvMRiptRMxcp9udResWqRMrHHJKVAy/TbWbqeCmdrvBrm92GHoEjN55iKn0RGQ9wJe9oGwLSz5B5N2WoQ0/IPP42T38Vg+b3+OxQ7XSmpZrk14n8EOCYkUXEjlTeXirCyguAMyIxOhsMui61GOLK4T/ojM/FapQ6tEXX3GilVvhL5YoKxGhMojB6or/REied6oKR4rzXQeTdhuTcwjdcX+AgTRVMpEB2I0W1TtGA56SKVhEPBFkNKVvMEeLW0Qr3fFNBlbjv4fmiJg/7G0cvyRUpk0GQpcojgA5/CgV1YV5conDGhlH+J+bSReNga7v backuppc@backup.data.gouv.fr' >> /etc/ssh/authorized_keys/root
-
 
 Mise en place d'un dump quotidien des bases MySQL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -264,24 +183,6 @@ Installation du plugin nagios ::
 Puis ajouter la commande *check_mongo* dans la configuration d'NRPE et recharger sa configuration ::
 
   echo "command[check_mongo]=/usr/local/lib/nagios/plugins/check_mongo -H 127.0.0.1 -P 27017 -A connect" > /etc/nagios/nrpe.d/mongo.cfg
-  service nagios-nrpe-server reload
-
-
-Mise en place d'un check Spamd
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-  echo "command[check_spamd]=/usr/lib/nagios/plugins/check_tcp -H 127.0.0.1 -p 783" > /etc/nagios/nrpe.d/spamd.cfg
-  service nagios-nrpe-server reload
-
-
-Mise en place d'un check Jetty
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-  echo "command[check_jetty]=/usr/lib/nagios/plugins/check_tcp -H 127.0.0.1 -p 8983" > /etc/nagios/nrpe.d/jetty.cfg
   service nagios-nrpe-server reload
 
 

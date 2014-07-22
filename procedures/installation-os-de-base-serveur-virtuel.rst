@@ -1,3 +1,9 @@
+=======================================================
+Procédure d'installation d'une machine virtuelle Etalab
+=======================================================
+
+Cette procédure décrit l'installation d'une machine virtuelle d'etalab. Elle nécessite des accès privilégiés seulement connus des personnes autorisées.
+
 Installation automatisée via preseed
 ====================================
 
@@ -109,4 +115,8 @@ Installation par la console
 On lance ``virt-manager`` depuis un ordinateur afin de démarrer la VM et s'y connecter en mode console. La machine boot via PXE et lance automatiquement après 10 minutes, une installation de base. 
 
 Pour installer un environnement particulier, on peux renseigner le paramètre de boot qui est affiché. Par exemple **ui** ou **api**. Dans chacun des cas, l'installateur exécutera un script de post installation permettant la création des environnements relatifs à votre choix.
+
+Si votre machine est une machine de l'environnement lan, poursuivez la procédure via ce document :: 
+
+  installation-serveur-virtuel-lan.rst
 

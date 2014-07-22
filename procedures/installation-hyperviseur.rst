@@ -1,8 +1,9 @@
-======================================
-Installation d'un hyperviseur chez Ovh
-======================================
+====================================
+Installation d'un hyperviseur Etalab 
+====================================
 
 Installation de l'OS d'un hyperviseur à partir de la console rescue-pro d'OVH
+-----------------------------------------------------------------------------
 
 .. important:: La documentation ci-dessous est adaptée au serveur *ns235977*. Modifiez les noms, adresses IP et autres paramètres au serveur que vous installez.
 
@@ -17,7 +18,7 @@ On supprime toute trace de l'ancien RAID :
   mdadm --zero-superblock /dev/sdb1
   mdadm --zero-superblock /dev/sdb2
 
-On repartionne sda & sba :
+On repartionne sda & sdb :
 - 80G en type fd (RAID Logiciel)
 - le reste en xfs
 
@@ -184,13 +185,13 @@ On install un kernel :
 
 ::
 
-  apt-get install linux-image-3.11-0.bpo.2-amd64
+  apt-get install linux-image-3.12-0.bpo.1-amd64
 
 Configuration de alerte mail :
 
 ::
   
-  echo "root: supervision@etalab2.fr" >> /etc/aliases
+  echo "root: supervision@data.gouv.fr" >> /etc/aliases
   newaliases
 
 On install mdadm & grub :
@@ -206,6 +207,26 @@ On modifie ensuite le paramètre rootdelay du kernel (particularité du 3.11). P
 ::
 
   update-grub
+
+Standardisation des hyperviseurs via git
+----------------------------------------
+
+On configure une interface temporaire vxlan10 pour récupérer la config git-common ::
+
+  /opt/iproute2/ip link add vxlan10 type vxlan id 10 group 239.0.0.10 ttl 4 dev br1
+  /opt/iproute2/ip addr add 10.10.10.x/24 broadcast 10.10.10.255 dev vxlan10
+  /opt/iproute2/ip link set dev vxlan10 up
+
+On clone le dépot git hyp-common ::
+
+  git clone git@git.intra.data.gouv.fr:hyp-common /srv/common
+
+On exécute le script qui permet de déplacer la configuration des confs ::
+
+  cd /srv/common
+  ./checkOrInstall
+  ./checkOrInstall install
+
 
 Configuration des hyperviseurs une fois l'installation de l'OS fait
 ===================================================================
@@ -229,37 +250,6 @@ Dans le fichier /etc/ssh/sshd_config, ajouter la ligne ::
 
   PasswordAuthentication no 
 
-
-Installation de fail2ban
-------------------------
-
-::
-  
-  apt-get install fail2ban
-
-Le check SSH est activé par défaut avec un ban au bout de 6 erreurs. Ceci peut-être modifié en éditant le fichier */etc/fail2ban/jail.conf* et en modifiant le paramètre *maxretry* de la section *[ssh]*.
-
-Pour faire en sorte que certaine IP ne soit jamais bannies, il faut éditer le paramètre *ignoreip* de la section *[DEFAULT]*. Ce paramètre liste les adresses IP qui ne seront jamais bannies (liste séparée par des espaces).
-
-Etant donné que Fail2ban utilise des règles Netfilter pour bloquer les IP bannies et que nous mettons par ailleurs en place un pare-feu à base de règles Netfilter également, le service Fail2ban ne sera pas démarrer directement mais le sera via le script packetfilter qui manipulera également nos règles de pare-feu. Nous allons donc désactiver le lancement automatique de Fail2ban et faire en sorte que celui-ci ne soit pas réactiver en cas de mise à jour du paquet Debian :
-
-::
-  
-  insserv -r -f fail2ban
-  echo "#! /bin/sh
-  ### BEGIN INIT INFO
-  # Provides:          fail2ban
-  # Required-Start:    $local_fs $remote_fs
-  # Required-Stop:     $local_fs $remote_fs
-  # Should-Start:      $time $network $syslog iptables firehol shorewall ipmasq arno-iptables-firewall
-  # Should-Stop:       $network $syslog iptables firehol shorewall ipmasq arno-iptables-firewall
-  # Default-Start:     
-  # Default-Stop:      0 1 2 3 4 5 6
-  # Short-Description: Start/stop fail2ban
-  # Description:       Start/stop fail2ban, a daemon scanning the log files and
-  #                    banning potential attackers.
-  ### END INIT INFO" > /etc/insserv/overrides/fail2ban
-  insserv fail2ban
 
 Installation du pare-feu
 ------------------------
@@ -337,10 +327,13 @@ Connecter une fois sur chaque hyperviseur depuis chaque hyperviseur (y compris e
   ssh root@192.168.0.1
   ssh root@192.168.0.2
   ssh root@192.168.0.3
+  ssh root@192.168.0.4
 
 
 Installation de Ceph
 --------------------
+
+.. note:: L'installation d'un hyperviseur, ne necessite pas forcément l'installation de ceph. Dans ce cas, installer ceph-common puis passer a la prochaine étape.
 
 ::
 
@@ -673,10 +666,9 @@ On défini ensuite un niveau de réplication à 3 pour tous les pools :
   ceph osd pool set libvirt-ssd size 3
   ceph osd pool set libvirt-sata size 3
 
+
 Installation de libvirt
 -----------------------
-
-- Executer sur les trois serveurs :
 
 ::
 
@@ -684,8 +676,11 @@ Installation de libvirt
   mkfs.ext4 /dev/vg_$( hostname -s )/libvirt 
   tune2fs -i0 -c0 /dev/vg_$( hostname -s )/libvirt
   echo "/dev/mapper/vg_$( hostname -s )-libvirt /var/lib/libvirt ext4    defaults             0       0" >> /etc/fstab
+  mkdir /var/lib/libvirt
   mount -a
   apt-get install libvirt-bin qemu-kvm netcat-openbsd qemu-utils
+
+
 
 Configuration de Libvirt pour utiliser Ceph
 -------------------------------------------
@@ -747,313 +742,46 @@ Télécharger l'ISO Debian qui sera utilisée pour l'installation des VMs :
 
   wget -O /var/lib/libvirt/images/debian-7.2.0-amd64-netinst.iso http://cdimage.debian.org/debian-cd/7.2.0/amd64/iso-cd/debian-7.2.0-amd64-netinst.iso
 
-Gestion des VMs
-===============
 
-Creation d'une VM
------------------
 
-- Choisir sur quel hyperviseur vous souhaitez créer cette VM
-- Creation du disque dans ceph :
-
-::
-
-  qemu-img create -f rbd rbd:[pool]/[nom-vm] [taille]
-
-**Avec :**
-
-  - **[pool] :** Le pool Ceph a utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-  - **[nom-vm] :** Nom de la VM sans espace, uniquement des caractères ascii (exemple : *test*)
-  - **[taille] :** Taille du disque (Exemple : *20G*)
-
-- Il faut ensuite créer une adresse MAC virtuelle dans l'interface OVH. Cette adresse MAC doit être associée à l'IP Failover qui sera associé à la VM. Pour cela, il faut d'abord associer l'IP Failover au serveur physique hébergeant la VM (Dans *Accueil > Serveurs dédiés	> Services > IP Fail-Over*), puis créer une MAC virtuelle pour cette adresse IP de type *ovh* (Dans *Accueil > Serveurs dédiés > Services > Mac Virtuelle pour VPS*).
-
-- Utiliser les commandes *create-virtual-machine-failover* ou *create-virtual-machine-ripe* pour créer la VM au niveau de Libvirt ::
-
-::
-  create-virtual-machine-failover [nom-vm] [mac] [ssd]
-
-ou ::
-
-  create-virtual-machine-ripe [nom-vm] [ssd]
-
-**Avec :**
-
-- **[nom-vm] :** Nom de la VM (identique au nom du volume)
-- **[mac] :** L'adresse MAC virtuelle attaché à l'IP Failover destinée à la VM
-- **[ssd] :** Ajouter le paramètre *ssd* si le disque de la VM est sur stockage *SSD*
-
-
-
-Lancer ensuite la VM et faire l'installation de celle-ci. L'outil *virt-manager* sera grandement utile pour cela. La VM est configurée pour booter sur son disque-dur puis sinon sur son lecteur de CD-ROM connecté à l'ISO Debian situé sur chaque hyperviseur dans */var/lib/libvirt/images/debian-7.2.0-amd64-netinst.iso*. En conséquence, une fois la VM installée, elle rebootera sans modification sur son disque-dur.
-
-L'interface réseau est configurée pour utiliser le réseau publique, cependant il est pas possible de configurer cette interface depuis l'installeur au vue de la particularité de l'adressage OVH. Il faudra donc procéder à l'installation de base de la VM sans utiliser des dépôts réseaux.
-
-La VM a été créé avec des ressources *basiques*, à savoir 2 *vCPU* et 1Go de mémoire vive. Vous pouvez modifier cela dans *virt-manager* (ou en utilisant la commande *virsh edit [nom-vm]*). Un redémarrage complet (= *stop* puis *start*) peut-être nécessaire pour l'application de certaines modifications.
-
-Une fois l'installation terminé et toujours au travers la console de la VM, il faut réaliser la configuration de l'interface réseau. Pour cela, éditer le fichier */etc/network/interfaces* et ajouter le bloc suivant :
-
-::
-
-  auto eth0
-  iface eth0 inet static
-          address [IP FailOver]
-          netmask 255.255.255.255
-          broadcast [IP FailOver]
-          post-up route add [GW Machine Physique] dev eth0
-          post-up route add default gw [GW Machine Physique] dev eth0
-          post-down route del [GW Machine Physique] dev eth0
-          post-down route del default gw [GW Machine Physique]
-
-**Avec :**
-
-- **[IP FailOver] :** l'adresse IP FailOver (exemple : *87.98.165.65*)
-- **[GW Machine Physique] :** l'adresse IP de la passerelle de la machine physique (exemple pour *ns235513* c'est *178.33.236.254*)
-
-- Activer ensuite l'interface *eth0* :
-
-::
-
-  ifup eth0
-
-- Configurer les DNS en créant le fichier */etc/resolv.conf* :
-
-::
-
-  nameserver 213.186.33.99
-
-
-::
-
-  virsh dumpxml [nom-vm] > /tmp/[nom-vm].xml
-  scp /tmp/[nom-vm].xml 192.168.0.2:/tmp/
-  ssh 192.168.0.2 "virsh define '/tmp/[nom-vm].xml'"
-  scp /tmp/[nom-vm].xml 192.168.0.3:/tmp/
-  ssh 192.168.0.3 "virsh define '/tmp/[nom-vm].xml'"
-
-.. important:: Toutes modifications des resources de la VM (via *virt-manager* commme en ligne de commandes), devront être répercutées sur l'ensemble des hyperviseurs. Pour cela vous pouvez procéder de la même manière en exécutant la commande *virsh undefined [nom-vm]* avec la commande *virsh define*.
-
-Arrêt/Démarrage d'une VM
-------------------------
-
-Démarrer une VM :
-
-::
-
-  virsh start [nom-vm]
-
-Arrêt d'une VM :
-
-::
-
-  virsh shutdown [nom-vm]
-
-Arrêt forcé (=coupure de courant) d'une VM :
-
-::
-
-  virsh destroy [nom-vm]
-
-
-Migration d'une machine virtuelle
----------------------------------
-
-Pour cela, il faut commencer par migrer l'adresse IP failover sur l'hyperviseur de destination dans la console OVH (dans *Accueil > Serveurs dédié > Services > IP Fail-Over > Basculer une IP Fail-Over vers un autre serveur*). Cette migration peut prendre plus de 5 minutes pour être effective. Pour miniser la coupure, vous pouvez attendre que la migration soit effective pour effectuer la migration de la VM.
-
-Pour migrer la VM, connectez-vous sur l'hyperviseur la faisant tourner actuellement et lancer la commande suivante :
-
-::
-
-  virsh migrate --live [test] qemu+ssh://root@[IP serveur destination]/system tcp://[IP server destination]
-
-**Avec :**
-
-- **[IP serveur destination] :** l'adresse IP du serveur de destination (exemple : *192.168.0.2*)
-- **[test]:** Nom de la machine virtuel.
-
-**Remarque :** La migration de la VM peut également être faite via *virt-manager*. Pour cela, il faudra avoir ouvert une connexion sur l'hyperviseur source et l'hyperviseur de destination.
-
-- Une fois la migration effectuée, il est nécessaire de modifier l'IP de la passerelle par défaut de la VM. Pour cela, en utilisant la console VNC (ou *virt-manager*) :
-
-  - Stopper l'interface *eth0* avec la commande *ifdown eth0*
-  - Editer le fichier */etc/network/interfaces* et modifier l'adresse IP de la passerelle par défaut dans la configuration de l'interface *eth0*. Il s'agit de toutes les IP finissant par *.254* normalement. Mettre à la place l'adresse IP de la passerelle par défaut de l'hyperviseur sur lequel la VM a été migré.
-  - Réactiver l'interface *eth0* avec la commande *ifup eth0*
-
-.. note:: Visiblement, la VM continue à être joignable même après migration et avant d'avoir effectué le changement de la passerelle par défaut. Cependant, cette configuration n'est pas acceptée par OVH et il est indispensable de faire cette modification rapidement au risque de voir l'IP FailOver de la VM bloquée. Pour voir si des IPs sont bloquées, connectez-vous à la console OVH, aller dans la fiche du serveur dédié, *état du serveur* et enfin *Adresses IP Bloquées*. Une alerte mail est envoyée avant blocage, en cas de detection de configuration incorrecte.
-
-Lister les images disques du cluster ceph
------------------------------------------
-
-::
-  
-  rbd list --pool [pool]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-
-
-Pour plus d'information sur une image disque en particulier, utilisez la commande :
-
-::
-  
-  rbd info [pool]/[nom-vm]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-
-
-Supprimer l'image disque d'une VM
----------------------------------
-
-::
-  
-  rbd rm [pool]/[nom-vm]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-
-Agrandir une image disque
--------------------------
-
-- Arrêter la VM
-- Une fois la VM arrêter, agrandir l'image disque :
-
-::
-  
-  rbd resize --size=[taille en Mb] [pool]/[nom-vm]
-
-**Avec :**
-
-- **[taille en Mb] :** la nouvelle taille de l'image disque en Mb
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-
-- Une fois le redimessionement fait, relancer la VM :
-
-::
-  
-  virsh start [nom-vm]
-
-- Une fois la VM rebootée, il faut faire en sorte d'utiliser cet espace disque supplémentaire. Si vous utilisez *LVM*, cela passe par la commande *pvresize*. Si le *PV* est sur une partition, il faudra étendre la partition avant d'effectuer le *pvresize*.
-
-Réduire une image disque
-------------------------
-
-- Commencer par réduire la taille disque utilisée sur la VM. Si vous utilisez *LVM*, il faudra :
-
-  - réduire le *PV* avec la commande *pvresize*. Il est conseillé de réduire plus que nécessaire et de réagrandir ensuite le *PV* à la taille exact du disque après redimenssionnement.
-  - si le *PV* utilise une partition et nom pas un bloc device directement, il faudra également réduire la partition
-
-- Une fois l'espace disque excédentaire libéré, il faut stopper la VM
-- Redimmensionner l'image disque de la VM avec la commande :
-
-::
-  
-  rbd resize --size=[taille en Mb] [poolpool]/[nom-vm] --allow-shrink
-
-**Avec :**
-
-  - **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-  - **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-
-- Relancer ensuite la VM
-- Si nécessaire, il faut maintenant faire en sorte d'utiliser le volume complètement. Référez-vous à la fin de la procédure d'extention d'une image disque pour plus d'infos.
-
-Créer un snapshot d'une image disque
-------------------------------------
-
-::
-  
-  rbd snap create [pool]/[nom-vm]@[nom-snap]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-- **[nom-snap] :** le nom que vous voulez nommer votre snapshot. Ce nom doit être court, ne comporter que des caractères ASCII et sans espace ni caractère *compliqué*
-
-Lister les snapshots d'une image disque
----------------------------------------
-
-
-::
-  
-  rbd snap list [pool]/[nom-vm]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-
-Remettre un disque à l'état d'un snapshot précédent
----------------------------------------------------
-
-Cette opération consite à écraser toutes les modifications faites depuis un snapshot. Cette modification est **irréversible**. Il est cependant possible de faire un nouveau snapshot avant restauration afin de pouvoir revenir à l'état précédent si besoin est.
-
-::
-  rbd snap rollback [pool]/[nom-vm]@[nom-snap]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-- **[nom-snap] :** le nom du snapshot
-
-.. important:: Cette opération peut prendre pas mal de temps. Cette durée augmente en fonction de la taille du snapshot et de la quantité de modification faite depuis la création du snapshot.
-
-Supprimer un snapshot d'une image disque
-----------------------------------------
-
-::
-  
-  rbd snap rm [pool]/[nom-vm]@[nom-snap]
-
-**Avec :**
-
-- **[pool] :** le pool Ceph à utiliser : *libvirt-ssd* pour un disque sur stockage *SSD* ou *libvirt-sata* pour un disque sur stockage *SATA*.
-- **[nom-vm] :** le nom de la VM et plus particulièrement le nom du volume *RBD* correspondant à l'image disque de la VM
-- **[nom-snap] :** le nom du snapshot
-
-Redémarrage d'un hyperviseur
-============================
-
-Cette procédure explique comment redémarrer un des hyperviseur pour un besoin de maintenance.
-
-Il faut commencer par déplacer les VM tournant sur cet hyperviseur sur un autre. Pour cela assurez-vous tout d'abord que l'ensemble des VM de cet hypversiveur pourront tourner sans problème sur le second hyperviseur notamment en terme de mémoire vive disponible. Au besoin, réduiser temporairement la mémoire allouée aux VMs.
-
-Une fois cette vérification faire, suivre la procédure de migration d'une VM pour les migrer une à une.
-
-Une fois que l'hyperviseur ne fait plus tourner aucune VM, exectuer la commande suivant pour eviter une resynchronisation inutile durant l'indisponibilité de l'hyperviseur :
-
-::
-  
-  ceph osd set noout
-
-Vous pouvez maintenant redémmarer la machine. Au reboot repasser le service en mode normal :
-
-::
-  
-  ceph osd unset noout
-
-Installation et configuration de virt-manager sur un poste client
-=================================================================
-
-Installation sur une machine Debian Wheezy :
-
-- Installer le paquet debian *virt-manager*
-- Lancer virt-manager
-- Dans le menu *Fichier*, choisir *Ajouter une connexion*
-- Dans Hyperviseur, laisser *QEMU/KVM*
-- Cocher la case *Connexion à un hôte distant*
-- Dans méthode, choisir *SSH*
-- Dans nom d'utilisateur, entrer *etalab*
-- Dans Nom de l'hôte, entre le nom de domaine du serveur (exemple : *ns235977.ovh.net*)
-- Validez en cliquant sur le bouton *Connecter*
-
-**Remarque :** Pour ne pas avoir à saisir votre mot de passe, vous pouvez mettre votre clé SSH sur chaque serveur dans le fichier */etc/ssh/authorized_keys/etalab*.
+Installation de la configuration réseau des vlans
+-------------------------------------------------
+
+On fixe les Vxlan dans la configuration de l'hyperviseur ::
+
+    # Lan area
+	auto vxlan10
+	iface vxlan10 inet manual
+	        pre-up /opt/iproute2/ip link add vxlan10 type vxlan id 10 group 239.0.0.10 ttl 4 dev br1
+	        post-down /opt/iproute2/ip link del vxlan10
+	
+	auto br10
+	iface br10 inet static
+	        address 10.10.10.5
+	        netmask 255.255.255.0
+	        network 10.10.10.0
+	        broadcast 10.10.10.255
+	        bridge_ports vxlan10
+	        bridge_maxwait 0
+	        bridge_stp off
+	        bridge_fd 0
+	
+	# Api area
+	auto vxlan11
+	iface vxlan11 inet manual
+	        pre-up /opt/iproute2/ip link add vxlan11 type vxlan id 11 group 239.0.0.11 ttl 4 dev br1
+	        post-down /opt/iproute2/ip link del vxlan11
+	
+	auto br11
+	iface br11 inet static
+	        address 10.10.11.5
+	        netmask 255.255.255.0
+	        network 10.10.11.0
+	        broadcast 10.10.11.255
+	        bridge_ports vxlan11
+	        bridge_maxwait 0
+	        bridge_stp off
+	        bridge_fd 0
+
+
+On reboot la machine. 
