@@ -17,12 +17,6 @@ En outre,avec l'utilisation d'une interconnection VPN de niveau 2 (Layer 2 ou L2
 
 Les informations qui suivents décrivent comment nous avons mis en place VxLAN dans notre architecture ainsi que les VPN L2.
 
-Reading :
-
-  * http://www.randco.fr/blog/2013/vxlan/
-  * https://tools.ietf.org/html/draft-mahalingam-dutt-dcops-vxlan-02
-
-
 Prérequis
 ---------
 Quelques pré-requis ont été nécessaires.
@@ -54,7 +48,7 @@ Quelques notions de bridging :
 Et un peu de lecture : 
 
   * https://tools.ietf.org/html/draft-mahalingam-dutt-dcops-vxlan-09
-
+  * http://www.randco.fr/blog/2013/vxlan/
 
 Schéma d'architecture de VxLAN
 ==============================
@@ -224,10 +218,14 @@ Liaison VPN-L2 entre GRA<->RBX
 ------------------------------
 Pour illustrer la mise en place typique d'un vpn l2 entre deux machines, j'ai pris pour exemple une machine ayant la fonction d'hyperviseur, sur le site de Rbx.
 
-On installe openvpn et on génère une clé :: 
+On installe openvpn et on génère une clé. On installe également un outil pour générer de l'entropy (En ssh, c'est long sinon..) ::
 
-    apt-get install openvpn
+    apt-get install openvpn rng-tools
     openvpn --genkey --secret /etc/openvpn/static.key
+
+Pour générer le l'entropy, on execute ::
+
+    rngd -r /dev/urandom
 
 Le fichier static.key joue le rôle de jeton d'identification, en chriffrant les liens d'interconnectivités vpn l2. Ceux-ci doivent être les mêmes à chaque endpoint d'une liaison.
 
