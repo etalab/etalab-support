@@ -110,7 +110,7 @@ D'autres commandes utiles ::
   ceph -s                          : affiche l'état du cluster ceph
   ceph osd tree                    : affiche l'arboresence les osd en fonction des nodes ceph
   ceph osd repair osd.[numero-osd] : lance une operation de reparation sur l'osd spécifié 
-
+  
 Afficher les informations d'états indépendements ::
 
   ceph osd stat : affiche l'état des osd.
@@ -118,6 +118,9 @@ Afficher les informations d'états indépendements ::
   ceph mds stat : affiche l'état des metadata du cluster ceph
   ceph pg stat  : afficher l'état des placement group du cluster ceph
 
+Afficher le nombre de replicat utilisés ::
+  
+  ceph osd dump : afficher le facteur de recopie des objects stockés. (e.g : pool 1 :rep size 3)
 
 Démarrer un osd
 ***************
