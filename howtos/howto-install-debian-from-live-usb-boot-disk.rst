@@ -6,10 +6,7 @@ Dans ce how to, nous allons voir comment installer Debian sur un ordinateur clas
 
 On va utiliser une méthode d'installation via chroot, et rsync pour installer l'OS.
 
-..notes:: 
-    
-    Cette clé usb bootable à été créé à partir d'un debootstrap. Une documentation se trouve ici :
-        * howto-make-debian-live-usb-boot-disk.rst
+.. note :: Cette clé usb bootable à été créé à partir d'un debootstrap. Une documentation se trouve ici : *howto-make-debian-live-usb-boot-disk.rst*
 
 
 Une fois que vous avez démarré sur la clé usb, veuilliez suivre les indications ci-après.
@@ -19,6 +16,8 @@ Choisir le disque dur de destination
 On choisi le disque dur local à la machine sur lequel on souhaite installer Debian, et on repère le device en question  ::
 
     fdisk -l
+
+::
 
 	Disk /dev/sda: 250.1 GB, 250059350016 bytes
 	255 heads, 63 sectors/track, 30401 cylinders, total 488397168 sectors
@@ -35,6 +34,7 @@ On choisi le disque dur local à la machine sur lequel on souhaite installer Deb
 On delete les partitions existantes
 -----------------------------------
 ::
+
 	Command (m for help): d
 	Partition number (1-4): 1
 	Command (m for help): d
@@ -43,6 +43,7 @@ On créer les nouvelles partitions
 ---------------------------------
 
 On crée une partition pour la SWAP ::
+
 	Command (m for help): n
 	Partition type:
 	   p   primary (0 primary, 0 extended, 4 free)
@@ -61,6 +62,7 @@ On crée une partition pour la SWAP ::
 
 
 Pour le ROOTFS ::
+
 	Command (m for help): n
 	Partition type:
 	   p   primary (1 primary, 0 extended, 3 free)
@@ -98,6 +100,7 @@ On écrit les modifications dans la table des partitions ::
     Command (m for help): quit
 
 On créer le file system pour le SWAP ::
+
     mkswap /dev/sda1 
     Setting up swapspace version 1, size = 2097148 KiB
     no label, UUID=7901eff5-efd0-43a8-9425-11061ef77f45
@@ -118,18 +121,21 @@ On définit un répertoire dans lequel, nous allons copier les fichiers du syst�
 Avant de  copier les données depuis la clé usb vers le disque local, on définit des exclusions ::
 
     vi /root/exclude.list
-	    /proc/*
-		/sys/*
-		/dev/*
-		/etc/fstab
-		/etc/mtab
-		/etc/hostname
-		/etc/lvm/*
-		/etc/udev/*
-		/etc/network/interfaces
-		/etc/lvm*
-		/mnt/*
-		/media/*
+
+::
+
+	/proc/*
+	/sys/*
+	/dev/*
+	/etc/fstab
+	/etc/mtab
+	/etc/hostname
+	/etc/lvm/*
+	/etc/udev/*
+	/etc/network/interfaces
+	/etc/lvm*
+	/mnt/*
+	/media/*
 
 
 Puis on copie le FS, sans les exclusions ::
@@ -156,6 +162,8 @@ On créer une fstab, en éditant le fichier suivant et en définissant son conte
 
     vi /etc/fstab 
 
+::
+
 	# /etc/fstab: static file system information.
 	#
 	# Use 'blkid' to print the universally unique identifier for a
@@ -170,6 +178,8 @@ On créer une fstab, en éditant le fichier suivant et en définissant son conte
 Les UUID de disque sont à lister avec la commande suivante, on récupère les UUID correspondant au device */dev/sda** ::
 
     blkid
+
+::
 
     /dev/sdb1: SEC_TYPE="msdos" UUID="EB67-3201" TYPE="vfat" 
 	/dev/sdb2: UUID="75ef5823-06fa-4bc3-ac94-e2935c3b6609" TYPE="ext4" 
@@ -212,3 +222,5 @@ L'installation est terminée, on peut rebooter la machine et déconnecter la cl�
 	umount /mnt/target/dev
 	umount /mnt/target
     reboot
+
+Done.
