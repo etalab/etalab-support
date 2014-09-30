@@ -68,6 +68,10 @@ Relance d'Nginx pour fournir Owncloud
 Une fois le service démarré, on se loggue rapidement sur l'interface web pour executer les mises à jours de la DB...
 
 
+Verification des logs 
+---------------------
+Pour s'assurer que le service fonctionne correctement on peut vérifier les logs en parallèle. Les logs se trouve dans */var/www/owncloud/dataoc/owncloud.log*
+
 Monsieur propre
 ---------------
 Pour finir proprement le travail on fait un peu de nettoyage ::
