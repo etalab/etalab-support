@@ -173,6 +173,10 @@ Si l'on souhaite basculer tout les services d'une machine à l'autre, il faut d�
 
     crm node standby
 
+Une fois les ressources migrés, on réactive la node ::
+
+    crm node online
+
 
 Visualiser les log de pacemaker
 -------------------------------
