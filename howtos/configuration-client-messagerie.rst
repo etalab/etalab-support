@@ -1,28 +1,75 @@
 =======================
 Manuel de l'utilisateur
-======================= 
+=======================
 
-Comment accéder à la messagerie du SGMAP/Etalab. 
+Ce manuel décrit les méthodes d'accès à l'outil de messagerie d'Etalab. Plusieurs outils sont mis en place pour satisfaire, autant que faire ce peut, les besoins de tous. 
 
-===================================================
-Utilisation via des protocoles standards et ouverts
-===================================================
+Globalement, pour accéder à l'information (mail, contact ou calendrier), vous pouvez utiliser un navigateur web, un téléphone ou un logiciel installé sur votre ordinateur.
 
-Accès au webmail
-================
-Le webmail est un site internet accessible par tous les utilisateurs authentifiés, pour consulter ses mails à distance. Le protocole utilisé est en https, donc sécurisé. 
+=============================================
+Accès via des protocoles standards et ouverts
+=============================================
+
+Accès par navigateur web ( webmail SOGo )
+=========================================
+Le webmail est un site internet accessible par tous les utilisateurs authentifiés, pour consulter ses mails à distance. Le protocole utilisé est en https, donc sécurisé.
 
 Muni de vos identifiants, vous pouvez accéder au webmail via l'adresse :
 
   * https://webmail.data.gouv.fr
 
+Pour ajouter l'agenda d'un collaborateur
+----------------------------------------
+Ce paragraphe décrit comment afficher le calendrier d'un collaborateur, ou de l'agenda d'équipe, sur votre profile Sogo.
+
+En premier lieu, il faut l'accord de votre collaborateur et que celui-ci vous autorise l'accès à son calendrier.
+
+Définition des droits
+~~~~~~~~~~~~~~~~~~~~~
+Actions à réaliser par votre collaborateur sur son compte Sogo:
+
+    1. Se rendre sur le webmail : https://webmail.data.gouv.fr
+    2. Aller dans l'onglet "Agenda"
+    3. Dans la section agenda, faite un clique droit sur votre "agenda personnel" puis "Partage.."
+    4. Une fenêtre s'ouvre, puis on clique sur "Ajouter"
+    5. Une deuxième fenêtre s'ouvre pour séléctionner le collaborateur voulu
+    6. On sélectionne le nom du collaborateur, puis on clique sur "Ajouter"
+    7. La fenêtre se ferme, et sur la fenêtre précédente on double clique sur le nom du collaborateur
+    8. Une troisième fenêtre s'ouvre, et on défini les droits que l'on souhaite définir
+    9. On valide en cliquant sur "Mettre à jour".
+
+
+En second temps, vous devez ajouter son calendrier à votre compte.
+
+Ajout du calendrier d'un collaborateur.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Action à réaliser par vous même sur votre compte Sogo :
+
+    1. Se rendre sur le webmail : https://webmail.data.gouv.fr
+    2. Aller dans l'onglet "Agenda"
+    3. Dans la section agenda, cliquez sur la 3ème icone (S'inscrire à un agenda.. )
+    4. Une fenêtre s'ouvre et on renseigne dans le champs, le nom ou l'email du collaborateur.
+    5. On clique sur le "+" en face du nom du collaborateur et on sélectionne "Personnal Calendar"
+    6. On clique sur "Ajouter", c'est terminé.
+
+Ajout de l'agenda d'équipe
+--------------------------
+Action à réaliser par vous même sur votre compte Sogo :
+
+    1. Se rendre sur le webmail : https://webmail.data.gouv.fr
+    2. Aller dans l'onglet "Agenda"
+    3. Dans la section agenda, cliquez sur la 3ème icone (S'inscrire à un agenda.. )
+    4. Une fenêtre s'ouvre et on renseigne dans le champs, "équipe"
+    5. On clique sur le "+" en face du nom et on sélectionne "Personnal Calendar"
+    6. On clique sur "Ajouter", c'est terminé.
+
+
 Si vous souhaitez utiliser un client lourd type Thunderbird, vous pouvez suivre les instructions ci-après.
 
 Configuration d'un client de messagerie via le protocol IMAP
 ============================================================
-
-Thunderbird / Icedove
----------------------
+Configuration de Thunderbird / Icedove
+--------------------------------------
 Pour les clients de messagerie de type thunderbird, la configuration des paramètres de comptes est automatique.
 
 Les champs toutefois nécessaire de renseigner sont les suivants: 
@@ -31,8 +78,10 @@ Les champs toutefois nécessaire de renseigner sont les suivants:
     * l'adresse mail ainsi que 
     * le mot de passe.
 
-Smartphone sous Android
-------------------------
+
+
+Configuration d'un smartphone sous Android
+------------------------------------------
 Concernant les autres clients de messagerie comme les téléphones par exemple, les champs à renseigner doivent être similaire à ce qui suit:
 
 Accédez aux paramètres des comptes dans "Paramètre" >  Section Compte, "Ajouter un compte" > "IMAP"
@@ -58,8 +107,8 @@ Renseignez les champs suivants ::
   Utilisateur / Password    : Idem que pour le service IMAP
 
 
-Smartphone sous Apple (Iphone)
-------------------------------
+Configuration d'un smartphone sous Apple (Iphone)
+-------------------------------------------------
 Pour les téléphones d'Apple procédez comme suit ::
 
     Appuyez sur "Réglages" > "Mails, Contacts, Calendrier" > "Ajouter un compte" > "Autre"
@@ -88,9 +137,8 @@ Ensuite on s'assure que le protocol SSL est activé ::
 
 C'est terminé. 
 
-Configuration d'un client CalDAV et CardDAV
-===========================================
-
+Configuration d'un client via les protocols CalDAV et CardDAV
+=============================================================
 ThunderBird / Icedove
 ---------------------
 
@@ -117,6 +165,18 @@ De la même manière, on procède pour le calendrier ::
     Emplacement : https://webmail.data.gouv.fr/SOGo/dav/felix.defrance/Calendar/personal/ (Ajustez à votre nom et prénom)
     Cliquez sur suivant, puis renseigner votre Nom, une couleur. 
     Sélectionnez le compte de messagerie auquel le calendrier est attaché.
+
+Ajout de l'agenda d'équipe
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Pour ajouter le calendrier partagé de l'équipe Etalab, on procède comme il suit ::
+
+    Allez dans "Agenda" > "Fichier" > "Nouveau" > "Agenda..."
+    Cochez "Sur le réseau"
+    Cochez Format : "CalDAV"
+    Emplacement : https://webmail.data.gouv.fr/SOGo/dav/agenda.etalab/Calendar/personal/
+    Cliquez sur suivant, puis renseigner votre Nom, une couleur.  
+    Sélectionnez le compte de messagerie auquel le calendrier est attaché. (le votre)
+    
 
 Smartphone sous Android
 -----------------------
