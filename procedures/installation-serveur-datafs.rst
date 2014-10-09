@@ -4,6 +4,12 @@ Installation du serveur de fichiers
 
 .. important:: L'installation se fait sur la base d'une installation vierge de Debian Wheezy.
 
+Il est nécéssaire d'augmenter la tailler du volume logique root et de son système de fichier
+pour prendre tout l'espace disponible::
+
+  lvextend -l +100%FREE /dev/vg00/root
+  resize2fs /dev/vg00/root
+
 Installation des dépendances NFS server ::
 
   apt-get install nfs-kernel-server nfs-common
