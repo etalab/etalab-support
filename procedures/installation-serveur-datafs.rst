@@ -31,7 +31,7 @@ Il faut ensuite exporter le répertoire en éditant le fichier ``/etc/exports``:
 
 Dans notre cas, nous exportons le répertoire ``/srv/nfs/data.gouv.fr`` en lecture-écriture pour tout le réseau ``10.10.10.0/24``
 
-Une fois les modifications effectués, il faut redémarrer le service ``nfs-kernel-server``::
+Une fois les modifications effectuées, il faut redémarrer le service ``nfs-kernel-server``::
 
   service nfs-kernel-server restart
 
