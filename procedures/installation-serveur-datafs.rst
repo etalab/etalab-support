@@ -4,11 +4,6 @@ Installation du serveur de fichiers
 
 .. important:: L'installation se fait sur la base d'une installation vierge de Debian Wheezy.
 
-Il est nécéssaire d'augmenter la tailler du volume logique root et de son système de fichier
-pour prendre tout l'espace disponible::
-
-  lvextend -l +100%FREE /dev/vg00/root
-  resize2fs /dev/vg00/root
 
 Installation des dépendances NFS server ::
 
@@ -18,18 +13,29 @@ Installation des dépendances NFS server ::
 Création et export des répertoires
 ==================================
 
-Pour suivre la LSB, les stockages seront créés dans ``/srv/nfs``,
-avec pour utilisateur et groupe *nobody*::
+Les fichiers seront stockés dans un volume logique formatté en ext4
+qu'il faut créer et monter dans ``/srv/nfs/datagouv`` ::
 
-  mkdir -p /srv/nfs/data.gouv.fr
-  chown nobody:nogroup /srv/nfs/data.gouv.fr
-  chmod 755 /srv/nfs/data.gouv.fr
+  lvcreate -l 100%FREE -n datagouv vg00
+  mkfs.ext4 /dev/vg00/datagouv
+  mkdir -p /srv/nfs/datagouv
+  mount -t ext4 /dev/vg00/datagouv /srv/nfs/datagouv
+
+Pour que le volume soit automatiquement monté au démarrage, on ajoute dans /etc/fstab::
+
+  /dev/mapper/vg00-datagouv /srv/nfs/datagouv ext4 errors=remount-ro  0    1
+
+
+Les stockages seront créés avec pour utilisateur et groupe *nobody*::
+
+  chown -R nobody:nogroup /srv/nfs/datagouv
+  chmod -R 755 /srv/nfs/datagouv
 
 Il faut ensuite exporter le répertoire en éditant le fichier ``/etc/exports``::
 
-  /srv/nfs/data.gouv.fr   10.10.10.0/24(rw,sync,no_subtree_check)
+  /srv/nfs/datagouv   10.10.10.0/24(rw,sync,no_subtree_check)
 
-Dans notre cas, nous exportons le répertoire ``/srv/nfs/data.gouv.fr`` en lecture-écriture pour tout le réseau ``10.10.10.0/24``
+Dans notre cas, nous exportons le répertoire ``/srv/nfs/datagouv`` en lecture-écriture pour tout le réseau ``10.10.10.0/24``
 
 Une fois les modifications effectuées, il faut redémarrer le service ``nfs-kernel-server``::
 
@@ -45,7 +51,7 @@ Installation des dépendances NFS client ::
 
 Creation du point de montage ::
 
-  mkdir -p /mnt/data.gouv.fr
+  mkdir -p /mnt/datagouv
 
 Pour voir la liste des répretoires exportés par un server::
 
@@ -56,7 +62,7 @@ Dans notre cas::
   showmount -e datafs
 
   Export list for datafs:
-  /srv/nfs/data.gouv.fr 10.10.10.0/24
+  /srv/nfs/datagouv 10.10.10.0/24
 
 
 Chaque répertoire peut être monté manuellement avec la commande ``mount``::
@@ -73,8 +79,8 @@ puis en executant la commande::
 
 Dans notre cas::
 
-  mount datafs:/srv/nfs/data.gouv.fr /mnt/data.gouv.fr
+  mount datafs:/srv/nfs/datagouv /mnt/datagouv
 
 ou::
 
-  datafs:/srv/nfs/data.gouv.fr /mnt/data.gouv.fr   nfs   rw,sync,hard,intr 0 0
+  datafs:/srv/nfs/datagouv /mnt/datagouv   nfs   rw,sync,hard,intr 0 0
