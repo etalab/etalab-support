@@ -31,6 +31,7 @@ Et on télécharge les sources et on les décompresses ::
 On arrêt de servire Owncloud ::
 
     service nginx stop
+    service php5-fpm stop
 
 On copie les fichiers existant vers le répertoire de la futur version d'owncloud ::
 
@@ -63,6 +64,7 @@ Relance d'Nginx pour fournir Owncloud
 -------------------------------------
 ::
 
+    service php5-fpm start
     service nginx start
 
 Une fois le service démarré, on se loggue rapidement sur l'interface web pour executer les mises à jours de la DB...
