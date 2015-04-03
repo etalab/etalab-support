@@ -258,3 +258,11 @@ Aller dans les "Réglages" du téléphone. Dans la section "Mail,Contact, Calend
 Si ce n'est pas déjà coché, activer la prise en charge du SSL dans les "Réglages Avancés". 
 
 C'est terminé.
+
+=============================
+Utilisation des filtres Sieve
+=============================
+
+Installer l'extension Thunderbird Sieve depuis https://github.com/thsmi/sieve/blob/master/nightly/README.md
+
+À l'heure où j'écris ces lignes cela fonctionne avec la version `sieve-0.2.3e.xpi` et Icedove 31.5.0 et la configuration par défaut.
