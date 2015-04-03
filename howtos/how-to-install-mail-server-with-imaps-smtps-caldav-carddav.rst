@@ -658,6 +658,7 @@ vi /etc/dovecot/dovecot-sql.conf.ext ::
 Envoi de mail via SMTPS
 -----------------------
 ::
+
     ./smtpt -H mail.data.gouv.fr -f felix@data.gouv.fr -t felix@data.gouv.fr -T -v -p 587 -U felix@data.gouv.fr -P foobar
 
 Vérifier la présence de nouveau mail dans ::
@@ -868,6 +869,7 @@ On active le site  ::
 Configuration d'activesync
 --------------------------
 ::
+
      apt-get install sogo-activesync
 
 Configuration des backups des utilisateurs sogo
