@@ -66,25 +66,33 @@ Puis on se chroot ::
 
 	chroot /mnt/usb
 
-On installe un kernel ainsi qu'un bootloader et on ajoute les dépôts génériques de debian ::
+On installe un kernel ainsi qu'un bootloader ::
     
-    apt-get install linux-image-amd64 grub2 
+    apt-get install linux-image-amd64 grub2
+
+.. note:: Au moment de l'installation de grub2, l'installeur demande de selectionner le disque de boot. On prendra soin de coche le device de la clé usb. Dans mon cas celui-ci sera "/dev/sdc".
+
+On ajoute les dépôts génériques de debian ::
 
     echo "deb http://ftp.fr.debian.org/debian wheezy main contrib non-free" > /etc/apt/sources.list
     echo "deb http://security.debian.org/ wheezy/updates main contrib non-free" >> /etc/apt/sources.list
 
 On installe quelques packages nécessaires  ::
 
-    apt-get install console-data keyboard-configuration vim htop locales pciutils binutils bind9-host openssh-server firmware-linux-nonfree
+    apt-get update; apt-get install console-data keyboard-configuration vim htop locales pciutils binutils bind9-host openssh-server firmware-linux-nonfree
+
+On définit un mot de passe root ::
+
+    passwd
 
 On sort du chroot ::
   
-  exit
+    exit
 
 On copie le kernel et l'initrd dans la partition de boot de la clé usb ::
 
-  cp /mnt/usb/boot/vmlinuz-3.2.0-4-amd64 /mnt/usb-boot/vmlinuz
-  cp /mnt/usb/boot/initrd.img-3.2.0-4-amd64 /mnt/usb-boot/initrd.gz
+    cp /mnt/usb/boot/vmlinuz-3.2.0-4-amd64 /mnt/usb-boot/vmlinuz
+    cp /mnt/usb/boot/initrd.img-3.2.0-4-amd64 /mnt/usb-boot/initrd.gz
 
 C'est terminé on démonte les partitions proprement ::
 
