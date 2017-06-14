@@ -4,7 +4,7 @@ Etalab technical documentation
 
 This repository is the official repository for etalab's infrastructure documentation.
 
-Please submit your issues [here](https://github.com/etalab/etalab-support/issues) and provides as much details as possible.
+`Please submit your issues <https://github.com/etalab/etalab-support/issues>`_ and provide as much details as possible.
 
 You can submit feature requests and enhancement proposals too.
 
@@ -37,5 +37,6 @@ To convert this documentation follow theses step :
 Licence
 =======
 
-Licence Creative Commons Attribution -  Partage dans les Mêmes Conditions 4.0 International
-.. _ImageLink: https://i.creativecommons.org/l/by-sa/4.0/88x31.png
+|cc-by-sa| Licence Creative Commons Attribution -  Partage dans les Mêmes Conditions 4.0 International
+
+.. |cc-by-sa| image:: https://i.creativecommons.org/l/by-sa/4.0/88x31.png
